@@ -8,6 +8,8 @@ public class GameManager : MonoBehaviour
 
     [Header("References")]
     public PlayerStats player;
+    public GameObject playerPrefab;  // ← 추가
+    public Transform playerSpawnPoint;
     public GameObject enemyPrefab;
     public Transform enemySpawnPoint;
 
@@ -81,6 +83,11 @@ public class GameManager : MonoBehaviour
             itemManager = FindObjectOfType<ItemManager>();
             shopManager = FindObjectOfType<ShopManager>();
             uiManager = FindObjectOfType<UIManager>();
+            if (shopManager != null && itemManager != null)
+            {
+                shopManager.Initialize(this, itemManager);
+            }
+
             InitializeBackgrounds();
         }
         else
@@ -101,7 +108,20 @@ public class GameManager : MonoBehaviour
         killCount = 0;
         gold = 0;
 
-        // 플레이어 상태 리셋
+        // ★ 기존 플레이어 제거
+        if (player != null)
+        {
+            Destroy(player.gameObject);
+        }
+
+        // ★ 플레이어 새로 스폰
+        if (playerPrefab != null && playerSpawnPoint != null)
+        {
+            GameObject playerObj = Instantiate(playerPrefab, playerSpawnPoint.position, Quaternion.identity);
+            player = playerObj.GetComponent<PlayerStats>();
+        }
+
+        // 플레이어 상태 초기화
         if (player != null)
         {
             player.hasLastStandUsed = false;
@@ -114,7 +134,7 @@ public class GameManager : MonoBehaviour
         if (gridManager != null)
         {
             boardSize = gridManager.size;
-            gridManager.InitializeGrid(boardSize,boardSize);
+            gridManager.InitializeGrid(boardSize, boardSize);
         }
 
         // 아이템 / 콤보 초기화
@@ -128,20 +148,17 @@ public class GameManager : MonoBehaviour
             comboManager.Initialize(itemManager);
         }
 
-        // UI 인게임 전환 + 텍스트/BGM 세팅
+        UpdateBackground();
+        SpawnEnemy();
+
         if (uiManager != null)
         {
             uiManager.OnGameStarted(stage, killCount, gold);
         }
 
-        // 첫 몹 소환 + 플레이어 턴 시작
-        UpdateBackground();
-        SpawnEnemy();
         UpdateAllUI();
         StartPlayerTurn();
     }
-
-
     void SpawnEnemy()
     {
         if (currentEnemy != null)
@@ -613,7 +630,10 @@ public class GameManager : MonoBehaviour
     void OpenShop()
     {
         Debug.Log("상점 오픈!");
-        uiManager?.ShowShopPanel();
+        if (shopManager != null)
+        {
+            shopManager.OpenShop();
+        }
     }
 
     void GameOver()
@@ -657,7 +677,12 @@ public class GameManager : MonoBehaviour
             WorldUnitHUD playerHUD = player.GetComponentInChildren<WorldUnitHUD>();
             if (playerHUD != null)
             {
+                Debug.Log($"플레이어 HUD 업데이트: HP {player.currentHP}/{player.maxHP}");
                 playerHUD.UpdateUI();
+            }
+            else
+            {
+                Debug.LogWarning("플레이어 HUD를 찾을 수 없음!");
             }
         }
 
@@ -666,7 +691,12 @@ public class GameManager : MonoBehaviour
             WorldUnitHUD enemyHUD = currentEnemy.GetComponentInChildren<WorldUnitHUD>();
             if (enemyHUD != null)
             {
+                Debug.Log($"적 HUD 업데이트: HP {currentEnemy.currentHP}/{currentEnemy.maxHP}");
                 enemyHUD.UpdateUI();
+            }
+            else
+            {
+                Debug.LogWarning("적 HUD를 찾을 수 없음!");
             }
         }
     }

@@ -123,6 +123,11 @@ public class EnemyStats : MonoBehaviour
             if (AudioManager.Instance != null)
                 AudioManager.Instance.PlaySE("MobAttacked");
         }
+        WorldUnitHUD hud = GetComponentInChildren<WorldUnitHUD>();
+        if (hud != null)
+        {
+            hud.UpdateUI();
+        }
     }
 
 

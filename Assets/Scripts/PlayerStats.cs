@@ -81,8 +81,14 @@ public class PlayerStats : MonoBehaviour
 
         if (currentHP < 0f)
             currentHP = 0f;
-    }
 
+        // ★ UI 즉시 업데이트
+        WorldUnitHUD hud = GetComponentInChildren<WorldUnitHUD>();
+        if (hud != null)
+        {
+            hud.UpdateUI();
+        }
+    }
 
     public void Heal(float amount)
     {

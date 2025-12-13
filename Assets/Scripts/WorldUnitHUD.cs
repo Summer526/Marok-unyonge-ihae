@@ -42,10 +42,15 @@ public class WorldUnitHUD : MonoBehaviour
             enemy = GetComponentInParent<EnemyStats>();
 
         mainCam = Camera.main;
+
+        Debug.Log($"WorldUnitHUD Awake - Player: {player != null}, Enemy: {enemy != null}");
     }
 
     void LateUpdate()
     {
+        UpdateHPUI();
+        UpdateElementIcon();
+        UpdateShieldUI();
         if (faceCamera && mainCam != null)
         {
             Vector3 dir = transform.position - mainCam.transform.position;
@@ -67,6 +72,13 @@ public class WorldUnitHUD : MonoBehaviour
     {
         if (hpFillImage == null && hpText == null)
             return;
+
+        // ★ 매번 참조 다시 찾기
+        if (player == null)
+            player = GetComponentInParent<PlayerStats>();
+
+        if (enemy == null)
+            enemy = GetComponentInParent<EnemyStats>();
 
         float current = 0f;
         float max = 0f;
@@ -97,7 +109,7 @@ public class WorldUnitHUD : MonoBehaviour
         {
             int c = Mathf.CeilToInt(current);
             int m = Mathf.CeilToInt(max);
-            hpText.text = $"{c}/{m}";
+            hpText.text = string.Format("{0}/{1}", c, m);
         }
     }
 
@@ -133,10 +145,13 @@ public class WorldUnitHUD : MonoBehaviour
         if (shieldRoot == null && shieldText == null)
             return;
 
+        // 쉴드는 플레이어 기준으로만 표시
         if (player == null)
         {
             if (shieldRoot != null)
                 shieldRoot.SetActive(false);
+            if (shieldText != null)
+                shieldText.gameObject.SetActive(false);
             return;
         }
 
@@ -144,14 +159,16 @@ public class WorldUnitHUD : MonoBehaviour
         {
             if (shieldRoot != null)
                 shieldRoot.SetActive(false);
+            if (shieldText != null)
+                shieldText.gameObject.SetActive(false);
         }
         else
         {
             if (shieldRoot != null)
                 shieldRoot.SetActive(true);
-
             if (shieldText != null)
             {
+                shieldText.gameObject.SetActive(true);
                 int value = Mathf.CeilToInt(player.shield);
                 shieldText.text = value.ToString();
             }

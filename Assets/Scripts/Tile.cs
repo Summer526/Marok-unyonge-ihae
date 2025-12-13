@@ -32,21 +32,23 @@ public class Tile : MonoBehaviour
 
     void OnMouseDown()
     {
-        if (gridManager == null) return;
-
-        // 드래그 시작 타일 등록
+        Debug.Log($"타일 OnMouseDown: {gridPos}");
+        if (gridManager == null)
+        {
+            Debug.LogWarning("gridManager가 null!");
+            return;
+        }
         gridManager.BeginDrag(this);
     }
 
     void OnMouseUp()
     {
+        Debug.Log($"타일 OnMouseUp: {gridPos}");
         if (gridManager == null) return;
 
-        // 마우스가 떨어진 위치(월드 좌표)
         Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         mouseWorldPos.z = 0f;
 
-        // 드래그 종료 처리
         gridManager.EndDragAtPosition(mouseWorldPos);
     }
     public void SetHighlighted(bool on)

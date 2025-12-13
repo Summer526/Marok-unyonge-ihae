@@ -140,7 +140,29 @@ public class UIManager : MonoBehaviour
         if (gridManager == null)
             gridManager = FindObjectOfType<GridManager>();
     }
+    private void Update()
+    {
+        // 테스트용: I 키로 인벤토리 열기
+        if (Input.GetKeyDown(KeyCode.I))
+        {
+            Debug.Log("I 키로 인벤토리 강제 호출");
+            OnClickOpenInventory();
+        }
+        if (Input.GetMouseButtonDown(0))
+        {
+            UnityEngine.EventSystems.PointerEventData pointerData = new UnityEngine.EventSystems.PointerEventData(UnityEngine.EventSystems.EventSystem.current);
+            pointerData.position = Input.mousePosition;
 
+            List<UnityEngine.EventSystems.RaycastResult> results = new List<UnityEngine.EventSystems.RaycastResult>();
+            UnityEngine.EventSystems.EventSystem.current.RaycastAll(pointerData, results);
+
+            Debug.Log($"클릭 위치에 있는 UI ({results.Count}개):");
+            foreach (var result in results)
+            {
+                Debug.Log($" - {result.gameObject.name}");
+            }
+        }
+    }
     private void Start()
     {
         // 기본은 메인 메뉴부터
@@ -150,6 +172,18 @@ public class UIManager : MonoBehaviour
 
         SetupButtonCallbacks();
         InitAudioSliders();
+
+        if (sliderBGM != null)
+        {
+            sliderBGM.onValueChanged.RemoveAllListeners();
+            sliderBGM.onValueChanged.AddListener(OnBGMVolumeChanged);
+        }
+
+        if (sliderSE != null)
+        {
+            sliderSE.onValueChanged.RemoveAllListeners();
+            sliderSE.onValueChanged.AddListener(OnSEVolumeChanged);
+        }
     }
 
     void SetupButtonCallbacks()
@@ -224,8 +258,14 @@ public class UIManager : MonoBehaviour
 
         if (btnOpenInventoryInGame != null)
         {
+            Debug.Log("인벤토리 버튼 콜백 연결 시도");
             btnOpenInventoryInGame.onClick.RemoveAllListeners();
             btnOpenInventoryInGame.onClick.AddListener(OnClickOpenInventory);
+            Debug.Log($"인벤토리 버튼 활성화 상태: {btnOpenInventoryInGame.interactable}");
+        }
+        else
+        {
+            Debug.LogError("btnOpenInventoryInGame이 null! Inspector에서 할당 필요!");
         }
 
         // Shop
@@ -403,12 +443,33 @@ public class UIManager : MonoBehaviour
         ShowInGamePanel();
         RefreshInGameInfo(stage, killCount, gold);
         UpdateSwapCountUI();
+        UpdateElementDisplay();
     }
 
     public void RefreshInGameInfo(int stage, int killCount, int gold)
     {
-        if (txtStage) txtStage.text = $"{stage}";
-        if (txtGold) txtGold.text = gold.ToString();
+        Debug.Log($"RefreshInGameInfo: Stage={stage}, Gold={gold}");
+
+        if (txtStage != null)
+        {
+            txtStage.text = stage.ToString();
+            Debug.Log($"Stage 텍스트 업데이트: {stage}");
+        }
+        else
+        {
+            Debug.LogWarning("txtStage가 null!");
+        }
+
+        if (txtGold != null)
+        {
+            txtGold.text = gold.ToString();
+            Debug.Log($"Gold 텍스트 업데이트: {gold}");
+        }
+        else
+        {
+            Debug.LogWarning("txtGold가 null!");
+        }
+
 
         int stageGroup = stage <= 30 ? 1 : (stage <= 60 ? 2 : 3);
         int lastGroup = lastBGMStage <= 30 ? 1 : (lastBGMStage <= 60 ? 2 : 3);
@@ -425,8 +486,7 @@ public class UIManager : MonoBehaviour
     {
         if (txtSwapCount == null || gridManager == null)
             return;
-
-        int remaining = gridManager.GetRemainingSwaps(); // GridManager 쪽에 이 함수 있어야 함
+        int remaining = gridManager.GetRemainingSwaps();
         txtSwapCount.text = remaining.ToString();
     }
 
@@ -494,6 +554,8 @@ public class UIManager : MonoBehaviour
     // 인게임 – 인벤토리 버튼
     public void OnClickOpenInventory()
     {
+        Debug.Log("OnClickOpenInventory 호출됨!");
+
         PlayButtonSE();
         UpdateInventoryUI();
         ToggleInventoryPanel(true);
@@ -537,12 +599,21 @@ public class UIManager : MonoBehaviour
 
             slot.slotRoot.SetActive(true);
 
+            // ★ 아이콘 표시
             if (slot.imgIcon != null)
             {
-                slot.imgIcon.sprite = firstItem.icon;
-                slot.imgIcon.enabled = (firstItem.icon != null);
+                if (firstItem.icon != null)
+                {
+                    slot.imgIcon.sprite = firstItem.icon;
+                    slot.imgIcon.enabled = true;
+                }
+                else
+                {
+                    slot.imgIcon.enabled = false;
+                }
             }
 
+            // ★ 개수 표시
             if (slot.txtCount != null)
             {
                 if (count > 1)
@@ -560,14 +631,14 @@ public class UIManager : MonoBehaviour
             if (slot.btnSlot != null)
             {
                 slot.btnSlot.onClick.RemoveAllListeners();
-                ItemData itemToShow = firstItem; // 클로저 캡처
+                ItemData itemToShow = firstItem;
                 slot.btnSlot.onClick.AddListener(() => ShowInventoryItemInfo(itemToShow));
             }
 
             slotIndex++;
         }
 
-        // 남은 슬롯 비활성화
+        // ★ 남은 슬롯 완전히 비활성화
         for (int i = slotIndex; i < inventoryItemSlots.Length; i++)
         {
             if (inventoryItemSlots[i] != null && inventoryItemSlots[i].slotRoot != null)
@@ -576,7 +647,6 @@ public class UIManager : MonoBehaviour
             }
         }
 
-        // 기본 정보 초기화 (아무것도 선택 안 됨)
         ClearInventoryItemInfo();
     }
     void ShowInventoryItemInfo(ItemData item)
@@ -818,13 +888,14 @@ public class UIManager : MonoBehaviour
         // 보유 골드 표시
         if (txtShopGold != null && gameManager != null)
         {
-            txtShopGold.text = $"{gameManager.gold}G";
+            txtShopGold.text = string.Format("{0}G", gameManager.gold);
         }
+
         // 리롤 비용 표시
         if (txtRerollCost != null)
         {
             int cost = shopManager.GetRerollCost();
-            txtRerollCost.text = $"{cost}G";
+            txtRerollCost.text = string.Format("{0}G", cost);
         }
 
         // 아이템 슬롯 갱신
@@ -867,7 +938,7 @@ public class UIManager : MonoBehaviour
                 if (slot.txtPrice != null)
                 {
                     int price = shopManager.GetItemPrice(item);
-                    slot.txtPrice.text = $"{price}G";
+                    slot.txtPrice.text = string.Format("{0}G", price);
                 }
 
                 // 구매 버튼
