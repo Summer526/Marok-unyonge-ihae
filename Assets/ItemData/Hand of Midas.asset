@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc118a9e99131e24e91ed70b3936c7fe, type: 3}
+  m_Name: Hand of Midas
+  m_EditorClassIdentifier: 
+  icon: {fileID: 21300000, guid: ba93a27adbd7d304cafd410c2be3843c, type: 3}
+  itemType: 11
+  displayName: "\uB9C8\uB514\uC2A4\uC758 \uC190"
+  description: "\uBAAC\uC2A4\uD130\uB97C \uCC98\uCE58\uD560 \uB54C\uB9C8\uB2E4 \uD68D\uB4DD\uD558\uB294
+    \uACE8\uB4DC\uAC00 \uC99D\uAC00\uD55C\uB2E4. \r\r"
+  basePrice: 100
+  primaryElement: 0
+  secondaryElement: 0
+  maxStack: 3

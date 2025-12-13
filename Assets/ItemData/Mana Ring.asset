@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc118a9e99131e24e91ed70b3936c7fe, type: 3}
+  m_Name: Mana Ring
+  m_EditorClassIdentifier: 
+  icon: {fileID: 21300000, guid: 75ef273b23001a24b8b996f9400c037a, type: 3}
+  itemType: 10
+  displayName: "\uC5E0\uBE14\uB7FC"
+  description: "\uD50C\uB808\uC774\uC5B4\uC758 \uAE30\uBCF8 \uACF5\uACA9\uB825\uC744
+    \uAC00\uC7A5 \uD06C\uAC8C \uB04C\uC5B4\uC62C\uB9AC\uB294 \uC0C1\uC704 \uC544\uC774\uD15C.
+    \r\r"
+  basePrice: 250
+  primaryElement: 0
+  secondaryElement: 0
+  maxStack: 0
