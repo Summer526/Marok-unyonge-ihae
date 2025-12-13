@@ -17,7 +17,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &3998656660744534639
 RectTransform:
   m_ObjectHideFlags: 0
@@ -178,7 +178,7 @@ MonoBehaviour:
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 0
-  m_FillAmount: 1
+  m_FillAmount: 0.76358056
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
@@ -307,7 +307,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 000/000
+  m_text: 92/120
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 961edf9adfe170343af20b7a9cac2f2a, type: 2}
   m_sharedMaterial: {fileID: 4675077402606154624, guid: 961edf9adfe170343af20b7a9cac2f2a, type: 2}
@@ -345,6 +345,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -681,7 +682,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 00000
+  m_text: 2
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 961edf9adfe170343af20b7a9cac2f2a, type: 2}
   m_sharedMaterial: {fileID: 4675077402606154624, guid: 961edf9adfe170343af20b7a9cac2f2a, type: 2}
@@ -719,6 +720,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -942,12 +944,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c3e2865e6e3d5842810f9408bd88d93, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  stage: 0
-  maxHP: 0
-  currentHP: 0
-  baseATK: 10
+  stage: 7
+  maxHP: 119.40521
+  currentHP: 91.1755
+  baseATK: 12.653188
   evadeChance: 0.2
   shield: 0
-  maxShield: 0
+  maxShield: 47.762085
   hasLastStandUsed: 0
   lastStandTriggeredThisHit: 0
