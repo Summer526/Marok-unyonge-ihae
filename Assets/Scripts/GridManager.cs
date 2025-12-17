@@ -295,7 +295,6 @@ public class GridManager : MonoBehaviour
 
     public void SwapTiles(Tile a, Tile b)
     {
-        // 위치와 속성 저장
         Vector2Int posA = a.gridPos;
         Vector2Int posB = b.gridPos;
         ElementType elemA = a.elementType;
@@ -303,13 +302,12 @@ public class GridManager : MonoBehaviour
         Vector3 worldPosA = a.transform.position;
         Vector3 worldPosB = b.transform.position;
 
-        // 기존 타일 파괴
-        Destroy(a.gameObject);
-        Destroy(b.gameObject);
+        // ★ DestroyImmediate로 즉시 파괴 (다음 클릭을 위해)
+        DestroyImmediate(a.gameObject);
+        DestroyImmediate(b.gameObject);
 
-        // 새 타일 생성 (위치 바꿔서)
-        tiles[posA.x, posA.y] = CreateTileAt(posA.x, posA.y, elemB, worldPosB);
-        tiles[posB.x, posB.y] = CreateTileAt(posB.x, posB.y, elemA, worldPosA);
+        tiles[posA.x, posA.y] = CreateTileAt(posA.x, posA.y, elemB, worldPosA);
+        tiles[posB.x, posB.y] = CreateTileAt(posB.x, posB.y, elemA, worldPosB);
 
         UpdateHighlightForCurrentElement();
         if (UIManager.Instance != null)
@@ -478,16 +476,15 @@ public class GridManager : MonoBehaviour
         if (dragStartTile == null)
             return;
 
-        // 마우스가 너무 안 움직였으면 드래그로 안 보고 취소
         float sqrDistance = (worldPos - dragStartTile.transform.position).sqrMagnitude;
-        float minDragDistance = 0.3f; // 0.1f → 0.3f로 증가 (너무 민감하지 않게)
+        // ★ 드래그 거리를 0.1f로 줄임 (더 민감하게)
+        float minDragDistance = 0.1f;
         if (sqrDistance < minDragDistance * minDragDistance)
         {
             dragStartTile = null;
             return;
         }
 
-        // 드래그 방향 기준으로 이웃 타일 찾기
         Tile target = GetNeighborInDragDirection(dragStartTile, worldPos);
 
         if (target != null && target != dragStartTile)

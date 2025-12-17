@@ -18,9 +18,23 @@ public class Tile : MonoBehaviour
         gridPos = pos;
         SetElement(type);
         SetHighlighted(false);
-        if (GetComponent<Collider2D>() == null)
+
+        // Collider2D 확인 및 추가
+        BoxCollider2D collider = GetComponent<BoxCollider2D>();
+        if (collider == null)
         {
-            gameObject.AddComponent<BoxCollider2D>();
+            collider = gameObject.AddComponent<BoxCollider2D>();
+            Debug.Log($"타일 ({pos.x},{pos.y})에 BoxCollider2D 추가됨");
+        }
+
+        // Collider 크기 확인
+        Debug.Log($"타일 ({pos.x},{pos.y}) Collider 크기: {collider.size}");
+
+        // 너무 작으면 크기 조정
+        if (collider.size.x < 0.5f || collider.size.y < 0.5f)
+        {
+            collider.size = new Vector2(1f, 1f);
+            Debug.Log($"타일 ({pos.x},{pos.y}) Collider 크기 조정됨: 1x1");
         }
     }
 
@@ -32,6 +46,13 @@ public class Tile : MonoBehaviour
 
     void OnMouseDown()
     {
+        // UI 위에서 클릭했는지 체크
+        if (UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
+        {
+            Debug.Log("UI 위에서 클릭함 - 무시");
+            return;
+        }
+
         Debug.Log($"타일 OnMouseDown: {gridPos}");
         if (gridManager == null)
         {
@@ -43,6 +64,11 @@ public class Tile : MonoBehaviour
 
     void OnMouseUp()
     {
+        if (UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
+        {
+            return;
+        }
+
         Debug.Log($"타일 OnMouseUp: {gridPos}");
         if (gridManager == null) return;
 
