@@ -469,23 +469,33 @@ public class GridManager : MonoBehaviour
     public void BeginDrag(Tile tile)
     {
         dragStartTile = tile;
+        Debug.Log($"드래그 시작: {tile.gridPos}");
     }
 
     public void EndDragAtPosition(Vector3 worldPos)
     {
+        Debug.Log($"EndDragAtPosition 호출됨, dragStartTile: {(dragStartTile != null ? dragStartTile.gridPos.ToString() : "null")}");
+
         if (dragStartTile == null)
+        {
+            Debug.Log("dragStartTile이 null이라 종료");
             return;
+        }
 
         float sqrDistance = (worldPos - dragStartTile.transform.position).sqrMagnitude;
-        // ★ 드래그 거리를 0.1f로 줄임 (더 민감하게)
         float minDragDistance = 0.1f;
+
+        Debug.Log($"드래그 거리: {Mathf.Sqrt(sqrDistance)}, 최소 거리: {minDragDistance}");
+
         if (sqrDistance < minDragDistance * minDragDistance)
         {
+            Debug.Log("드래그 거리가 너무 짧아서 취소");
             dragStartTile = null;
             return;
         }
 
         Tile target = GetNeighborInDragDirection(dragStartTile, worldPos);
+        Debug.Log($"타겟 타일: {(target != null ? target.gridPos.ToString() : "null")}");
 
         if (target != null && target != dragStartTile)
         {

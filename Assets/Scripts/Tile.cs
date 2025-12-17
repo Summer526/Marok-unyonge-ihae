@@ -46,35 +46,32 @@ public class Tile : MonoBehaviour
 
     void OnMouseDown()
     {
-        // UI 위에서 클릭했는지 체크
-        if (UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
+        Debug.Log($"타일 OnMouseDown 시작: {gridPos}");
+
+        if (gridManager == null)
         {
-            Debug.Log("UI 위에서 클릭함 - 무시");
+            Debug.LogError("gridManager가 null!");
             return;
         }
 
-        Debug.Log($"타일 OnMouseDown: {gridPos}");
-        if (gridManager == null)
-        {
-            Debug.LogWarning("gridManager가 null!");
-            return;
-        }
+        Debug.Log($"BeginDrag 호출: {gridPos}");
         gridManager.BeginDrag(this);
     }
 
     void OnMouseUp()
     {
-        if (UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
+        Debug.Log($"타일 OnMouseUp 시작: {gridPos}");
+
+        if (gridManager == null)
         {
+            Debug.LogError("gridManager가 null!");
             return;
         }
-
-        Debug.Log($"타일 OnMouseUp: {gridPos}");
-        if (gridManager == null) return;
 
         Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         mouseWorldPos.z = 0f;
 
+        Debug.Log($"EndDragAtPosition 호출: {gridPos} -> {mouseWorldPos}");
         gridManager.EndDragAtPosition(mouseWorldPos);
     }
     public void SetHighlighted(bool on)
