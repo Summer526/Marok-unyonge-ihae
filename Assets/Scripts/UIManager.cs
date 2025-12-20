@@ -40,7 +40,8 @@ public class UIManager : MonoBehaviour
     public Button btnHowToPlay;       // 메인메뉴 – 플레이하는 법
     public Button btnSettings;        // 메인메뉴 – 설정
     public Button btnQuit;            // 메인메뉴 – 나가기
-   
+    public Button btnCloseHowToPlay;
+
     [Header("Shop UI")]
     public Button btnRerollShop;
     public TMP_Text txtRerollCost;
@@ -140,29 +141,7 @@ public class UIManager : MonoBehaviour
         if (gridManager == null)
             gridManager = FindObjectOfType<GridManager>();
     }
-    private void Update()
-    {
-        // 테스트용: I 키로 인벤토리 열기
-        if (Input.GetKeyDown(KeyCode.I))
-        {
-            Debug.Log("I 키로 인벤토리 강제 호출");
-            OnClickOpenInventory();
-        }
-        if (Input.GetMouseButtonDown(0))
-        {
-            UnityEngine.EventSystems.PointerEventData pointerData = new UnityEngine.EventSystems.PointerEventData(UnityEngine.EventSystems.EventSystem.current);
-            pointerData.position = Input.mousePosition;
 
-            List<UnityEngine.EventSystems.RaycastResult> results = new List<UnityEngine.EventSystems.RaycastResult>();
-            UnityEngine.EventSystems.EventSystem.current.RaycastAll(pointerData, results);
-
-            Debug.Log($"클릭 위치에 있는 UI ({results.Count}개):");
-            foreach (var result in results)
-            {
-                Debug.Log($" - {result.gameObject.name}");
-            }
-        }
-    }
     private void Start()
     {
         // 기본은 메인 메뉴부터
@@ -199,6 +178,12 @@ public class UIManager : MonoBehaviour
         {
             btnHowToPlay.onClick.RemoveAllListeners();
             btnHowToPlay.onClick.AddListener(OnClickHowToPlay);
+        }
+
+        if (btnCloseHowToPlay != null)
+        {
+            btnCloseHowToPlay.onClick.RemoveAllListeners();
+            btnCloseHowToPlay.onClick.AddListener(OnClickCloseHowToPlay);
         }
 
         if (btnSettings != null)
@@ -489,7 +474,11 @@ public class UIManager : MonoBehaviour
         int remaining = gridManager.GetRemainingSwaps();
         txtSwapCount.text = remaining.ToString();
     }
-
+    public void OnClickCloseHowToPlay()
+    {
+        PlayButtonSE();
+        ToggleHowToPlayPanel(false);
+    }
     // =========================
     // 메인 메뉴 / 게임오버 버튼
     // =========================
@@ -947,18 +936,14 @@ public class UIManager : MonoBehaviour
                     if (!isPurchased)
                     {
                         slot.btnBuy.onClick.RemoveAllListeners();
-                        int index = i; // 클로저 캡처용
+                        int index = i;
                         slot.btnBuy.onClick.AddListener(() => OnClickBuyShopItem(index));
 
-                        // 구매 가능 여부에 따라 버튼 활성화
-                        ItemManager itemMgr = FindObjectOfType<ItemManager>();
-                        bool canBuy = (gameManager != null && gameManager.gold >= shopManager.GetItemPrice(item))
-                                   && (itemMgr != null && itemMgr.CanBuyMore(item));
-                        slot.btnBuy.interactable = canBuy;
+                        // ★ 구매 완료된 것만 비활성화, 나머지는 항상 활성화
+                        slot.btnBuy.interactable = true;
                     }
                     else
                     {
-                        // 이미 구매한 아이템은 버튼 비활성화
                         slot.btnBuy.interactable = false;
                     }
                 }

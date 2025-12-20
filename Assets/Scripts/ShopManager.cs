@@ -216,6 +216,8 @@ public class ShopManager : MonoBehaviour
         if (!itemManager.CanBuyMore(item))
         {
             Debug.Log($"{item.displayName}은(는) 더 이상 구매할 수 없습니다!");
+            if (AudioManager.Instance != null)
+                AudioManager.Instance.PlaySE("CantBuy");
             return false;
         }
 
@@ -225,11 +227,12 @@ public class ShopManager : MonoBehaviour
         {
             gameManager.gold -= price;
             itemManager.AddItem(item);
-            purchasedItems.Add(item); 
+            purchasedItems.Add(item);
 
             Debug.Log($"{item.displayName} 구매 완료! 남은 골드: {gameManager.gold}");
-            AudioManager.Instance.PlaySE("Buy");
-            // UI 갱신
+            if (AudioManager.Instance != null)
+                AudioManager.Instance.PlaySE("Buy");
+
             if (uiManager != null)
             {
                 uiManager.UpdateShopUI();
@@ -241,6 +244,8 @@ public class ShopManager : MonoBehaviour
         else
         {
             Debug.Log($"골드 부족! 필요: {price}, 보유: {gameManager.gold}");
+            if (AudioManager.Instance != null)
+                AudioManager.Instance.PlaySE("CantBuy");
             return false;
         }
     }
