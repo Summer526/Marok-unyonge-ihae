@@ -2,32 +2,54 @@
 
 public class AspectRatioController : MonoBehaviour
 {
+    [SerializeField] private Camera targetCamera;
+    [SerializeField] private float targetAspect = 9f / 16f;
+
+    private int lastW, lastH;
+
     void Awake()
     {
-        float targetAspect = 9f / 16f;
-        float windowAspect = (float)Screen.width / (float)Screen.height;
+        if (!targetCamera) targetCamera = Camera.main;
+        if (targetCamera) targetCamera.backgroundColor = Color.black;
+        Apply();
+    }
+
+    void Update()
+    {
+        if (Screen.width != lastW || Screen.height != lastH)
+            Apply();
+    }
+
+    private void Apply()
+    {
+        lastW = Screen.width;
+        lastH = Screen.height;
+
+        if (!targetCamera) return;
+
+        float windowAspect = (float)Screen.width / Screen.height;
         float scaleHeight = windowAspect / targetAspect;
 
-        Camera camera = Camera.main;
+        Rect rect = targetCamera.rect;
 
         if (scaleHeight < 1.0f)
         {
-            Rect rect = camera.rect;
+            // 위/아래 레터박스
             rect.width = 1.0f;
             rect.height = scaleHeight;
             rect.x = 0;
-            rect.y = (1.0f - scaleHeight) / 2.0f;
-            camera.rect = rect;
+            rect.y = (1.0f - scaleHeight) * 0.5f;
         }
         else
         {
+            // 좌/우 필러박스
             float scaleWidth = 1.0f / scaleHeight;
-            Rect rect = camera.rect;
             rect.width = scaleWidth;
             rect.height = 1.0f;
-            rect.x = (1.0f - scaleWidth) / 2.0f;
+            rect.x = (1.0f - scaleWidth) * 0.5f;
             rect.y = 0;
-            camera.rect = rect;
         }
+
+        targetCamera.rect = rect;
     }
 }

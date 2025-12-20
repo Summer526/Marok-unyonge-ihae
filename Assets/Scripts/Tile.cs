@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
+using UnityEngine.EventSystems;
 
-public class Tile : MonoBehaviour
+public class Tile : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 {
     public ElementType elementType;
     public TileState state = TileState.Normal;
@@ -44,7 +45,7 @@ public class Tile : MonoBehaviour
     }
 
 
-    void OnMouseDown()
+    public void OnPointerDown(PointerEventData eventData)
     {
         Debug.Log($"타일 OnMouseDown 시작: {gridPos}");
 
@@ -58,7 +59,7 @@ public class Tile : MonoBehaviour
         gridManager.BeginDrag(this);
     }
 
-    void OnMouseUp()
+    public void OnPointerUp(PointerEventData eventData)
     {
         Debug.Log($"타일 OnMouseUp 시작: {gridPos}");
 
