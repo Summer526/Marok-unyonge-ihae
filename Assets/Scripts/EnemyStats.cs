@@ -54,14 +54,11 @@ public class EnemyStats : MonoBehaviour
         BaseHP = baseHPOverride;
         BaseAtk = baseATKOverride;
 
-        // 랜덤 속성 (프리팹에 설정 안 했으면)
-        if (elementType == ElementType.Wind) // 기본값이면 랜덤
+        if (availableElements != null && availableElements.Length > 0)
         {
-            if (availableElements != null && availableElements.Length > 0)
-            {
-                elementType = availableElements[Random.Range(0, availableElements.Length)];
-            }
+            elementType = availableElements[Random.Range(0, availableElements.Length)];
         }
+
 
         UpdateStatsForStage(stage);
 

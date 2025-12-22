@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc118a9e99131e24e91ed70b3936c7fe, type: 3}
+  m_Name: ShildPotion
+  m_EditorClassIdentifier: 
+  icon: {fileID: 21300010, guid: ddf8838d0a06d8d4c9dec9e3bed69260, type: 3}
+  itemType: 14
+  displayName: "\uC274\uB4DC \uD3EC\uC158"
+  description: "\uC274\uB4DC\uB97C \uC57D\uAC04 \uD65C\uC131\uD654 \uD55C\uB2E4."
+  basePrice: 50
+  primaryElement: 0
+  secondaryElement: 0
+  maxStack: 3
+  isActive: 1
+  isConsumable: 0

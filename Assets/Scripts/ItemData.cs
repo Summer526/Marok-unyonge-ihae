@@ -17,4 +17,7 @@ public class ItemData : ScriptableObject
     [Header("Stack / 중복 수 제한")]
     [Tooltip("0 이하면 무제한, 1이면 1개까지만, 3이면 3개까지 소유 가능")]
     public int maxStack = 1;
+    [Header("Active Item")]
+    public bool isActive = false;        // ★ 추가
+    public bool isConsumable = false;    // ★ 추가 - 사용 시 소모되는지
 }

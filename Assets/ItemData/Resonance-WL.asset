@@ -23,3 +23,5 @@ MonoBehaviour:
   primaryElement: 0
   secondaryElement: 5
   maxStack: 1
+  isActive: 1
+  isConsumable: 0

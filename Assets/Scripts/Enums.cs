@@ -37,7 +37,11 @@ public enum ItemType
     ManaBracelet,   // 마나 강화 팔찌
     ManaNecklace,   // 마나 강화 목걸이
     ManaRing,       // 마나 강화 반지
-    MadisHand       // 마디스의 손(장갑)
+    MadisHand,       // 마디스의 손(장갑)
+
+    HowToPlay,
+    HealPotion,    
+    ShieldPotion
 }
 public enum GameMode
 {

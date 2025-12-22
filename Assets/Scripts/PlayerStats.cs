@@ -12,6 +12,15 @@ public class PlayerStats : MonoBehaviour
 
     public bool hasLastStandUsed = false;
     public bool lastStandTriggeredThisHit = false;
+    private readonly string ANIM_EVADE = "Evade";
+    private readonly string ANIM_HIT = "Hit";
+    [Header("Animation")]
+    public Animator animator;
+    void Awake()
+    {
+        if (animator == null)
+            animator = GetComponent<Animator>();
+    }
 
     public void UpdateStatsForStage(int newStage)
     {
@@ -41,8 +50,15 @@ public class PlayerStats : MonoBehaviour
         if (Random.value < evadeChance)
         {
             Debug.Log("플레이어 회피!");
+
+            // ★ 회피 애니메이션
+            if (animator != null)
+                animator.SetTrigger(ANIM_EVADE);
+
             return;
         }
+        if (animator != null)
+            animator.SetTrigger(ANIM_HIT);
 
         float remaining = damage;
 

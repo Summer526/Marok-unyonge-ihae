@@ -29,15 +29,14 @@ public class ComboManager : MonoBehaviour
             }
             else if (itemManager != null && itemManager.hasResonance)
             {
-                // 공명된 두 속성인지 체크
-                bool lastIsResonance = (lastAttackElement.Value == itemManager.resonanceA ||
-                                       lastAttackElement.Value == itemManager.resonanceB);
-                bool currentIsResonance = (element == itemManager.resonanceA ||
-                                          element == itemManager.resonanceB);
+                // ★ 새로운 공명 체크 방식
+                bool lastInResonance = itemManager.IsElementInActiveResonance(lastAttackElement.Value);
+                bool currentInResonance = itemManager.IsElementInActiveResonance(element);
 
-                if (lastIsResonance && currentIsResonance)
+                if (lastInResonance && currentInResonance)
                 {
-                    isSameGroup = true;
+                    // 같은 공명서에 속하는지 체크
+                    isSameGroup = itemManager.AreElementsInSameResonance(lastAttackElement.Value, element);
                 }
             }
         }

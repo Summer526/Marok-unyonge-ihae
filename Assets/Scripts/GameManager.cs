@@ -71,6 +71,9 @@ public class GameManager : MonoBehaviour
     private int[] boardWidths = { 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7 };
     private int[] boardHeights = { 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7 };
     private int expansionIndex = 0;
+
+    [Header("Tutorial")]
+    public ItemData howToPlayItem;
     void Awake()
     {
         if (Instance == null)
@@ -108,18 +111,18 @@ public class GameManager : MonoBehaviour
         killCount = 0;
         gold = 0;
 
-        // ★ 기존 플레이어 제거
-        if (player != null)
+        if (player == null)
         {
-            Destroy(player.gameObject);
+            player = FindObjectOfType<PlayerStats>();
         }
 
-        // ★ 플레이어 새로 스폰
-        if (playerPrefab != null && playerSpawnPoint != null)
+        // ★ 여전히 없으면 생성
+        if (player == null && playerPrefab != null && playerSpawnPoint != null)
         {
             GameObject playerObj = Instantiate(playerPrefab, playerSpawnPoint.position, Quaternion.identity);
             player = playerObj.GetComponent<PlayerStats>();
         }
+
 
         // 플레이어 상태 초기화
         if (player != null)
@@ -137,11 +140,17 @@ public class GameManager : MonoBehaviour
             gridManager.InitializeGrid(boardSize, boardSize);
         }
 
-        // 아이템 / 콤보 초기화
         if (itemManager != null && gridManager != null)
         {
             itemManager.Initialize(gridManager);
+
+            // ★ How To Play 아이템 기본 지급
+            if (howToPlayItem != null)
+            {
+                itemManager.AddItem(howToPlayItem);
+            }
         }
+
 
         if (comboManager != null && itemManager != null)
         {
@@ -311,7 +320,17 @@ public class GameManager : MonoBehaviour
         {
             itemManager.ApplyBarrierOnDamage(player, damage);
         }
+        if (comboManager != null)
+        {
+            comboManager.OnAttack(element);
+            comboMult = comboManager.GetComboMultiplier();
 
+            // ★ 콤보 UI 업데이트
+            if (uiManager != null)
+            {
+                uiManager.UpdateComboUI(comboManager.comboStreak);
+            }
+        }
         gridManager.ApplyAdditionalRandomRemove();
         gridManager.FillEmptyTiles();
         gridManager.ResetSwapCount();
@@ -361,6 +380,12 @@ public class GameManager : MonoBehaviour
         if (comboManager != null)
         {
             comboManager.OnNonAttack();
+
+            // ★ 콤보 UI 업데이트
+            if (uiManager != null)
+            {
+                uiManager.UpdateComboUI(comboManager.comboStreak);
+            }
         }
 
         gridManager.RemoveTiles(chain);
@@ -388,6 +413,12 @@ public class GameManager : MonoBehaviour
             if (comboManager != null)
             {
                 comboManager.OnNonAttack();
+
+                // ★ 콤보 UI 업데이트
+                if (uiManager != null)
+                {
+                    uiManager.UpdateComboUI(comboManager.comboStreak);
+                }
             }
 
             gridManager.ResetSwapCount();
@@ -537,7 +568,7 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        if (killCount % 10 == 0)
+        if (killCount % 15 == 0)
         {
             OpenShop();
         }
@@ -548,7 +579,7 @@ public class GameManager : MonoBehaviour
     }
 
 
-    void StartEnemyTurn()
+    public void StartEnemyTurn()
     {
         isPlayerTurn = false;
         Debug.Log("몹 턴 시작");
@@ -655,16 +686,39 @@ public class GameManager : MonoBehaviour
     }
     string GetGradeForStage(int stageNum)
     {
-        if (stageNum >= 100) return "S+";
-        if (stageNum >= 90) return "A+";
-        if (stageNum >= 80) return "A";
-        if (stageNum >= 70) return "B+";
-        if (stageNum >= 60) return "B";
-        if (stageNum >= 50) return "C+";
-        if (stageNum >= 40) return "C";
-        if (stageNum >= 30) return "D+";
-        if (stageNum >= 20) return "D";
-        return "F";
+        if (currentGameMode == GameMode.Endless)
+        {
+            // 무한모드 등급
+            if (stageNum >= 300) return "SSS";
+            if (stageNum >= 250) return "SS";
+            if (stageNum >= 200) return "S";
+
+            // 200층 이전: 10단계 구간 (100~200)
+            if (stageNum >= 190) return "A+";
+            if (stageNum >= 180) return "A";
+            if (stageNum >= 170) return "B+";
+            if (stageNum >= 160) return "B";
+            if (stageNum >= 150) return "C+";
+            if (stageNum >= 140) return "C";
+            if (stageNum >= 130) return "D+";
+            if (stageNum >= 120) return "D";
+            if (stageNum >= 110) return "F+";
+            return "F";
+        }
+        else
+        {
+            // 일반모드 등급 (기존)
+            if (stageNum >= 100) return "S+";
+            if (stageNum >= 90) return "A+";
+            if (stageNum >= 80) return "A";
+            if (stageNum >= 70) return "B+";
+            if (stageNum >= 60) return "B";
+            if (stageNum >= 50) return "C+";
+            if (stageNum >= 40) return "C";
+            if (stageNum >= 30) return "D+";
+            if (stageNum >= 20) return "D";
+            return "F";
+        }
     }
     public bool IsEndlessModeUnlocked()
     {

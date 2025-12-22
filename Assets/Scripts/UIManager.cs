@@ -2,6 +2,7 @@
 using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
+using System.Collections;
 
 public class UIManager : MonoBehaviour
 {
@@ -18,16 +19,20 @@ public class UIManager : MonoBehaviour
     public GameObject panelSettings;
     public GameObject panelGameOver;
     public GameObject panelShop;
-    public GameObject panelHowToPlay; 
+    public GameObject panelHowToPlay;
+    public GameObject panelStory;
 
     [Header("In-Game Info UI")]
     public TMP_Text txtStage;
     public TMP_Text txtGold;
     public TMP_Text txtSwapCount;   // 남은 이동 횟수 숫자만
+    public TMP_Text txtCombo;
+    public GameObject comboObject;
     public Button btnLeftElement;
     public Button btnRightElement;
     public Button btnConfirm;
     public Button btnOpenInventoryInGame;
+    public Button btnOpenSettingsInGame;
 
     [Header("Game Over UI")]
     public TMP_Text txtGameOverStage; // "Stage X" 만 표기
@@ -60,13 +65,17 @@ public class UIManager : MonoBehaviour
     }
     public ShopItemSlot[] shopItemSlots;
 
+    [Header("Story Panel")]
+    public Button btnCloseStory;
+    
     [Header("Inventory UI")]
     public Button btnCloseInventory;
     public TMP_Text txtInventoryItemName;     
     public TMP_Text txtInventoryItemDescription;
     public GameObject inventoryItemSlotPrefab;
     public Transform inventoryItemContainer;
-
+    public Button btnUseItem;
+    private ItemData selectedInventoryItem = null;
     [Header("Editor Helper")]
     [SerializeField] private int slotCountToGenerate = 10;  // 생성할 슬롯 개수
     [ContextMenu("Generate Inventory Slots")]
@@ -201,7 +210,71 @@ public class UIManager : MonoBehaviour
             sliderSE.onValueChanged.AddListener(OnSEVolumeChanged);
         }
     }
+    void Update()
+    {
+        // ★ 뒤로가기 버튼 감지
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            HandleBackButton();
+        }
+    }
+    public void UpdateComboUI(int comboStreak)
+    {
+        if (txtCombo == null) return;
 
+        if (comboStreak > 1)
+        {
+            txtCombo.text = $"x{comboStreak}";
+            txtCombo.gameObject.SetActive(true);
+        }
+        else
+        {
+            // ★ 콤보가 1로 떨어지면 잠시 후 비활성화
+            if (comboObject.activeSelf)
+            {
+                StartCoroutine(HideComboAfterDelay());
+            }
+        }
+    }
+    // ★ 콤보 숨기기 (0.5초 딜레이)
+    IEnumerator HideComboAfterDelay()
+    {
+        yield return new WaitForSeconds(0.2f);
+
+        if (comboObject != null)
+        {
+            comboObject.SetActive(false);
+        }
+    }
+    void HandleBackButton()
+    {
+        // 패널 우선순위: 설정 > 상점 > 인벤토리 > How To Play > 스토리
+        if (panelSettings != null && panelSettings.activeSelf)
+        {
+            OnClickCloseSettingsPanel();
+        }
+        else if (panelShop != null && panelShop.activeSelf)
+        {
+            OnClickCloseShop();
+        }
+        else if (panelInventory != null && panelInventory.activeSelf)
+        {
+            OnClickCloseInventory();
+        }
+        else if (panelHowToPlay != null && panelHowToPlay.activeSelf)
+        {
+            OnClickCloseHowToPlay();
+        }
+        else if (panelStory != null && panelStory.activeSelf)
+        {
+            OnClickCloseStory();
+        }
+        else if (panelInGame != null && panelInGame.activeSelf)
+        {
+            // 인게임에서는 설정 열기
+            OnClickOpenSettingsInGame();
+        }
+    }
     void SetupButtonCallbacks()
     {
         // === 메인 메뉴 버튼들 ===
@@ -302,6 +375,24 @@ public class UIManager : MonoBehaviour
             btnCloseInventory.onClick.RemoveAllListeners();
             btnCloseInventory.onClick.AddListener(OnClickCloseInventory);
         }
+        if (btnOpenSettingsInGame != null)
+        {
+            btnOpenSettingsInGame.onClick.RemoveAllListeners();
+            btnOpenSettingsInGame.onClick.AddListener(OnClickOpenSettingsInGame);
+        }
+
+        // ★ 스토리 닫기 버튼
+        if (btnCloseStory != null)
+        {
+            btnCloseStory.onClick.RemoveAllListeners();
+            btnCloseStory.onClick.AddListener(OnClickCloseStory);
+        }
+        if (btnUseItem != null)
+        {
+            btnUseItem.onClick.RemoveAllListeners();
+            btnUseItem.onClick.AddListener(OnClickUseItem);
+            btnUseItem.gameObject.SetActive(false);  // 초기에는 비활성화
+        }
     }
     // =========================
     // BGM 헬퍼
@@ -339,8 +430,20 @@ public class UIManager : MonoBehaviour
         if (panelGameOver) panelGameOver.SetActive(false);
         if (panelShop) panelShop.SetActive(false);
         if (panelHowToPlay) panelHowToPlay.SetActive(false);
+        if (panelStory) panelStory.SetActive(false);
+    }
+    public void ShowStoryPanel()
+    {
+        if (panelStory)
+            panelStory.SetActive(true);
     }
 
+    public void OnClickCloseStory()
+    {
+        PlayButtonSE();
+        if (panelStory)
+            panelStory.SetActive(false);
+    }
     public void ShowMainMenuPanel()
     {
         SetAllPanelsOff();
@@ -396,17 +499,38 @@ public class UIManager : MonoBehaviour
 
     string GetGradeForStage(int stageNum)
     {
-        if (stageNum >= 100) return "S+";
-        if (stageNum >= 90) return "A+";
-        if (stageNum >= 80) return "A";
-        if (stageNum >= 70) return "B+";
-        if (stageNum >= 60) return "B";
-        if (stageNum >= 50) return "C+";
-        if (stageNum >= 40) return "C";
-        if (stageNum >= 30) return "D+";
-        if (stageNum >= 20) return "D";
-        return "F";
+        if (gameManager != null && gameManager.currentGameMode == GameMode.Endless)
+        {
+            if (stageNum >= 300) return "SSS";
+            if (stageNum >= 250) return "SS";
+            if (stageNum >= 200) return "S";
+
+            if (stageNum >= 190) return "A+";
+            if (stageNum >= 180) return "A";
+            if (stageNum >= 170) return "B+";
+            if (stageNum >= 160) return "B";
+            if (stageNum >= 150) return "C+";
+            if (stageNum >= 140) return "C";
+            if (stageNum >= 130) return "D+";
+            if (stageNum >= 120) return "D";
+            if (stageNum >= 110) return "F+";
+            return "F";
+        }
+        else
+        {
+            if (stageNum >= 100) return "S+";
+            if (stageNum >= 90) return "A+";
+            if (stageNum >= 80) return "A";
+            if (stageNum >= 70) return "B+";
+            if (stageNum >= 60) return "B";
+            if (stageNum >= 50) return "C+";
+            if (stageNum >= 40) return "C";
+            if (stageNum >= 30) return "D+";
+            if (stageNum >= 20) return "D";
+            return "F";
+        }
     }
+
 
     // Shop 패널 – 이름 맞춰서 구현
     public void ShowShopPanel()
@@ -460,6 +584,12 @@ public class UIManager : MonoBehaviour
         RefreshInGameInfo(stage, killCount, gold);
         UpdateSwapCountUI();
         UpdateElementDisplay();
+        if (!PlayerPrefs.HasKey("StoryShown"))
+        {
+            ShowStoryPanel();
+            PlayerPrefs.SetInt("StoryShown", 1);
+            PlayerPrefs.Save();
+        }
     }
 
     public void RefreshInGameInfo(int stage, int killCount, int gold)
@@ -592,7 +722,6 @@ public class UIManager : MonoBehaviour
         ItemManager itemMgr = FindObjectOfType<ItemManager>();
         if (itemMgr == null) return;
 
-        // ★ 기존 슬롯 전부 삭제
         foreach (Transform child in inventoryItemContainer)
         {
             Destroy(child.gameObject);
@@ -611,22 +740,17 @@ public class UIManager : MonoBehaviour
             groupedItems[item.itemType].Add(item);
         }
 
-        // ★ 필요한 만큼만 슬롯 생성
         foreach (var kvp in groupedItems)
         {
             ItemData firstItem = kvp.Value[0];
             int count = kvp.Value.Count;
 
-            // 프리팹 생성
             GameObject slotObj = Instantiate(inventoryItemSlotPrefab, inventoryItemContainer);
 
-            // 컴포넌트 찾기
             Image imgIcon = slotObj.transform.Find("Canvas/Itme/IconImage")?.GetComponent<Image>();
             TMP_Text txtCount = slotObj.transform.Find("Canvas/Itme/Text (TMP)")?.GetComponent<TMP_Text>();
             Button btnSlot = slotObj.GetComponent<Button>();
 
-
-            // 아이콘 설정
             if (imgIcon != null)
             {
                 if (firstItem.icon != null)
@@ -640,7 +764,6 @@ public class UIManager : MonoBehaviour
                 }
             }
 
-            // 개수 설정
             if (txtCount != null)
             {
                 if (count > 1)
@@ -654,15 +777,32 @@ public class UIManager : MonoBehaviour
                 }
             }
 
-            // 버튼 클릭 이벤트
             if (btnSlot != null)
             {
                 ItemData itemToShow = firstItem;
-                btnSlot.onClick.AddListener(() => ShowInventoryItemInfo(itemToShow));
+                btnSlot.onClick.AddListener(() => SelectInventoryItem(itemToShow));  // ★ 이것만
             }
         }
 
         ClearInventoryItemInfo();
+    }
+    void SelectInventoryItem(ItemData item)
+    {
+        selectedInventoryItem = item;
+        ShowInventoryItemInfo(item);
+
+        // ★ 액티브 아이템이면 사용 버튼 활성화
+        if (btnUseItem != null)
+        {
+            if (item.isActive)
+            {
+                btnUseItem.gameObject.SetActive(true);
+            }
+            else
+            {
+                btnUseItem.gameObject.SetActive(false);
+            }
+        }
     }
     void ShowInventoryItemInfo(ItemData item)
     {
@@ -689,6 +829,10 @@ public class UIManager : MonoBehaviour
         if (txtInventoryItemDescription != null)
         {
             txtInventoryItemDescription.text = "";
+        }
+        if (btnUseItem != null)
+        {
+            btnUseItem.gameObject.SetActive(false);
         }
     }
     // 인게임 – 설정 버튼
@@ -985,6 +1129,83 @@ public class UIManager : MonoBehaviour
                 // 아이템 없음 - 슬롯 숨김
                 slot.slotRoot.SetActive(false);
             }
+        }
+    }
+    void OnClickUseItem()
+    {
+        if (selectedInventoryItem == null)
+            return;
+
+        PlayButtonSE();
+
+        ItemManager itemMgr = FindObjectOfType<ItemManager>();
+        if (itemMgr == null)
+            return;
+
+        // ★ HowToPlay 특수 처리
+        if (selectedInventoryItem.itemType == ItemType.HowToPlay)
+        {
+            ToggleHowToPlayPanel(true);
+            return;
+        }
+
+        // ★ 아이템 사용
+        bool success = itemMgr.UseActiveItem(selectedInventoryItem);
+
+        if (success)
+        {
+            // 인벤토리 UI 갱신
+            UpdateInventoryUI();
+
+            // 게임 UI 갱신
+            if (gameManager != null)
+            {
+                gameManager.UpdateAllUI();
+            }
+
+            // 공명서 UI 갱신
+            if (selectedInventoryItem.itemType == ItemType.AttributeResonance)
+            {
+                PlayerResonanceUI resonanceUI = FindObjectOfType<PlayerResonanceUI>();
+                if (resonanceUI != null)
+                {
+                    resonanceUI.UpdateUI();
+                }
+
+                // ★ 공명서는 턴 소비 안 함 (토글만)
+                return;
+            }
+
+            // ★ 회복/쉴드 물약은 턴 소비
+            if (selectedInventoryItem.itemType == ItemType.HealPotion ||
+                selectedInventoryItem.itemType == ItemType.ShieldPotion)
+            {
+                // 인벤토리 닫기
+                ToggleInventoryPanel(false);
+
+                // 콤보 끊기
+                ComboManager comboManager = FindObjectOfType<ComboManager>();
+                if (comboManager != null)
+                {
+                    comboManager.OnNonAttack();
+                    UpdateComboUI(comboManager.comboStreak);
+                }
+
+                // 적 턴으로 넘기기
+                if (gameManager != null)
+                {
+                    StartCoroutine(DelayedEnemyTurnAfterItem());
+                }
+            }
+        }
+    }
+    IEnumerator DelayedEnemyTurnAfterItem()
+    {
+        yield return new WaitForSeconds(0.5f);
+
+        if (gameManager != null)
+        {
+            gameManager.StartEnemyTurn();
         }
     }
 }

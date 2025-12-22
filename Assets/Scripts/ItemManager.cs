@@ -16,6 +16,7 @@ public class ItemManager : MonoBehaviour
     {
         gridManager = grid;
         ownedItems.Clear();
+        activeResonances.Clear();
         ResetAllFlags();
     }
     void ResetAllFlags()
@@ -28,6 +29,24 @@ public class ItemManager : MonoBehaviour
         hasBarrier = false;
         hasShopDiscount = false;
         hasLastStand = false;
+        // ★ 활성화된 공명서 다시 적용
+        foreach (var resonance in activeResonances)
+        {
+            if (resonance != null)
+            {
+                hasResonance = true;
+                break;
+            }
+        }
+
+        // ★ 보유 아이템 다시 적용
+        foreach (var item in ownedItems)
+        {
+            if (item.itemType != ItemType.AttributeResonance)  // 공명서는 제외
+            {
+                ApplyPassiveItem(item);
+            }
+        }
     }
     // 공명
     [Header("Resonance")]
@@ -66,6 +85,10 @@ public class ItemManager : MonoBehaviour
     private const int MaxOrbStackPerElement = 5;
     private const int MaxChainBoosterStack = 3;
     private const int MaxShopDiscountStack = 3;
+
+    [Header("Active Resonances")]
+    public List<ItemData> activeResonances = new List<ItemData>();  // ★ 활성화된 공명서 (최대 2개)
+    private const int MaxActiveResonances = 2;
 
     void Awake()
     {
@@ -108,10 +131,29 @@ public class ItemManager : MonoBehaviour
 
         ownedItems.Add(item);
 
+        // ★ 액티브 아이템은 인벤토리에만 추가
+        if (item.isActive)
+        {
+            Debug.Log($"{item.displayName} 획득 (액티브 아이템)");
+            return;
+        }
+
+        // 패시브 아이템은 즉시 효과 적용
+        ApplyPassiveItem(item);
+    }
+    void ApplyPassiveItem(ItemData item)
+    {
+        if (item == null)
+        {
+            Debug.LogWarning("null 아이템을 AddItem에 넘겼음");
+            return;
+        }
+
+        ownedItems.Add(item);
+
         switch (item.itemType)
         {
             case ItemType.AttributeResonance:
-                AddResonance(item);
                 break;
 
             case ItemType.AttributeOrb:
@@ -178,6 +220,186 @@ public class ItemManager : MonoBehaviour
                 Debug.Log($"마디스의 손 획득: 몹 처치 골드 +{madisHandCount * 20}%");
                 break;
         }
+    }
+    public bool UseActiveItem(ItemData item)
+    {
+        if (item == null || !item.isActive)
+        {
+            Debug.LogWarning("액티브 아이템이 아니거나 null입니다.");
+            return false;
+        }
+
+        bool success = false;
+
+        switch (item.itemType)
+        {
+            case ItemType.AttributeResonance:
+                success = ToggleResonance(item);  // ★ 추가
+                break;
+            case ItemType.HealPotion:
+                success = UseHealPotion();
+                break;
+
+            case ItemType.ShieldPotion:
+                success = UseShieldPotion();
+                break;
+
+            case ItemType.HowToPlay:
+                // UI 열기는 UIManager에서 처리
+                success = true;
+                break;
+        }
+
+        // ★ 소모성 아이템이면 제거
+        if (success && item.isConsumable)
+        {
+            ownedItems.Remove(item);
+            Debug.Log($"{item.displayName} 사용 완료 (소모)");
+        }
+
+        return success;
+    }
+    bool UseHealPotion()
+    {
+        PlayerStats player = FindObjectOfType<PlayerStats>();
+        if (player != null)
+        {
+            // 체력이 가득 차있으면 사용 불가
+            if (player.currentHP >= player.maxHP)
+            {
+                Debug.Log("체력이 가득 차있어 회복 물약을 사용할 수 없습니다.");
+                return false;
+            }
+
+            float healAmount = player.maxHP * 0.2f;
+            player.Heal(healAmount);
+            Debug.Log($"체력 회복 물약 사용: {healAmount:F1} 회복");
+
+            if (AudioManager.Instance != null)
+                AudioManager.Instance.PlaySE("Heal");
+
+            return true;
+        }
+        return false;
+    }
+
+    bool UseShieldPotion()
+    {
+        PlayerStats player = FindObjectOfType<PlayerStats>();
+        if (player != null)
+        {
+            // 쉬드가 최대치면 사용 불가
+            if (player.shield >= player.maxShield)
+            {
+                Debug.Log("쉴드가 최대치여서 쉴드 물약을 사용할 수 없습니다.");
+                return false;
+            }
+
+            float shieldAmount = player.maxHP * 0.2f;
+            player.AddShield(shieldAmount);
+            Debug.Log($"쉴드 물약 사용: {shieldAmount:F1} 쉴드 획득");
+
+            if (AudioManager.Instance != null)
+                AudioManager.Instance.PlaySE("MakeShield");
+
+            return true;
+        }
+        return false;
+    }
+    public bool ToggleResonance(ItemData resonanceItem)
+    {
+        if (resonanceItem == null || resonanceItem.itemType != ItemType.AttributeResonance)
+        {
+            Debug.LogWarning("공명서가 아닙니다.");
+            return false;
+        }
+
+        // 이미 활성화되어 있으면 비활성화
+        if (activeResonances.Contains(resonanceItem))
+        {
+            activeResonances.Remove(resonanceItem);
+            hasResonance = activeResonances.Count > 0;
+
+            Debug.Log($"{resonanceItem.displayName} 비활성화");
+            return true;
+        }
+
+        // 최대 개수 체크
+        if (activeResonances.Count >= MaxActiveResonances)
+        {
+            Debug.Log($"공명서는 최대 {MaxActiveResonances}개까지 활성화 가능합니다.");
+            return false;
+        }
+
+        // 속성 겹침 체크
+        if (IsElementOverlap(resonanceItem))
+        {
+            Debug.Log("이미 활성화된 속성과 겹칩니다.");
+            return false;
+        }
+
+        // 활성화
+        activeResonances.Add(resonanceItem);
+        hasResonance = true;
+
+        Debug.Log($"{resonanceItem.displayName} 활성화 ({activeResonances.Count}/{MaxActiveResonances})");
+        return true;
+    }
+
+    // ★ 속성 겹침 체크
+    bool IsElementOverlap(ItemData newResonance)
+    {
+        ElementType newA = newResonance.primaryElement;
+        ElementType newB = newResonance.secondaryElement;
+
+        foreach (var activeRes in activeResonances)
+        {
+            if (activeRes == null) continue;
+
+            ElementType activeA = activeRes.primaryElement;
+            ElementType activeB = activeRes.secondaryElement;
+
+            // 하나라도 겹치면 true
+            if (newA == activeA || newA == activeB || newB == activeA || newB == activeB)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // ★ 특정 속성이 활성화된 공명서에 포함되는지 체크 (ComboManager용)
+    public bool IsElementInActiveResonance(ElementType element)
+    {
+        foreach (var resonance in activeResonances)
+        {
+            if (resonance == null) continue;
+
+            if (resonance.primaryElement == element || resonance.secondaryElement == element)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // ★ 두 속성이 같은 공명서에 속하는지 체크 (ComboManager용)
+    public bool AreElementsInSameResonance(ElementType elemA, ElementType elemB)
+    {
+        foreach (var resonance in activeResonances)
+        {
+            if (resonance == null) continue;
+
+            bool hasA = (resonance.primaryElement == elemA || resonance.secondaryElement == elemA);
+            bool hasB = (resonance.primaryElement == elemB || resonance.secondaryElement == elemB);
+
+            if (hasA && hasB)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     void AddResonance(ItemData item)
