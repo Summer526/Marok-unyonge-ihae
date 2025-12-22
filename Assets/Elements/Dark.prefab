@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 2075968262362608093}
   - component: {fileID: 7269896831542105607}
   - component: {fileID: -1721480071690237866}
-  - component: {fileID: -1410435389114944583}
+  - component: {fileID: 7734738024924007734}
   m_Layer: 0
   m_Name: Dark
   m_TagString: Untagged
@@ -111,7 +111,7 @@ MonoBehaviour:
   gridPos: {x: 0, y: 0}
   spriteRenderer: {fileID: 7269896831542105607}
   highlightObj: {fileID: 7477853404305568363}
---- !u!61 &-1410435389114944583
+--- !u!61 &7734738024924007734
 BoxCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

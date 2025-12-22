@@ -64,7 +64,45 @@ public class UIManager : MonoBehaviour
     public Button btnCloseInventory;
     public TMP_Text txtInventoryItemName;     
     public TMP_Text txtInventoryItemDescription;
+    public GameObject inventoryItemSlotPrefab;
+    public Transform inventoryItemContainer;
 
+    [Header("Editor Helper")]
+    [SerializeField] private int slotCountToGenerate = 10;  // 생성할 슬롯 개수
+    [ContextMenu("Generate Inventory Slots")]
+    private void GenerateInventorySlots()
+    {
+        if (inventoryItemContainer == null)
+        {
+            Debug.LogError("Inventory Item Container가 할당되지 않았습니다!");
+            return;
+        }
+
+        if (inventoryItemSlotPrefab == null)
+        {
+            Debug.LogError("Inventory Item Slot Prefab이 할당되지 않았습니다!");
+            return;
+        }
+
+        // 기존 슬롯 전부 삭제
+        while (inventoryItemContainer.childCount > 0)
+        {
+            DestroyImmediate(inventoryItemContainer.GetChild(0).gameObject);
+        }
+
+        // 새로 생성
+        for (int i = 0; i < slotCountToGenerate; i++)
+        {
+#if UNITY_EDITOR
+            GameObject slot = UnityEditor.PrefabUtility.InstantiatePrefab(inventoryItemSlotPrefab, inventoryItemContainer) as GameObject;
+#else
+        GameObject slot = Instantiate(inventoryItemSlotPrefab, inventoryItemContainer);
+#endif
+            slot.name = $"Slot_{i:00}";
+        }
+
+        Debug.Log($"{slotCountToGenerate}개의 슬롯 생성 완료!");
+    }
     [System.Serializable]
     public class InventoryItemSlot
     {
@@ -74,7 +112,6 @@ public class UIManager : MonoBehaviour
         public Button btnSlot;
     }
 
-    public InventoryItemSlot[] inventoryItemSlots;
     [Header("Element Select UI")]
     public Image imgCurrentElement;
 
@@ -243,14 +280,8 @@ public class UIManager : MonoBehaviour
 
         if (btnOpenInventoryInGame != null)
         {
-            Debug.Log("인벤토리 버튼 콜백 연결 시도");
             btnOpenInventoryInGame.onClick.RemoveAllListeners();
             btnOpenInventoryInGame.onClick.AddListener(OnClickOpenInventory);
-            Debug.Log($"인벤토리 버튼 활성화 상태: {btnOpenInventoryInGame.interactable}");
-        }
-        else
-        {
-            Debug.LogError("btnOpenInventoryInGame이 null! Inspector에서 할당 필요!");
         }
 
         // Shop
@@ -561,6 +592,12 @@ public class UIManager : MonoBehaviour
         ItemManager itemMgr = FindObjectOfType<ItemManager>();
         if (itemMgr == null) return;
 
+        // ★ 기존 슬롯 전부 삭제
+        foreach (Transform child in inventoryItemContainer)
+        {
+            Destroy(child.gameObject);
+        }
+
         List<ItemData> items = itemMgr.ownedItems;
         Dictionary<ItemType, List<ItemData>> groupedItems = new Dictionary<ItemType, List<ItemData>>();
 
@@ -574,65 +611,54 @@ public class UIManager : MonoBehaviour
             groupedItems[item.itemType].Add(item);
         }
 
-        int slotIndex = 0;
-
+        // ★ 필요한 만큼만 슬롯 생성
         foreach (var kvp in groupedItems)
         {
-            if (slotIndex >= inventoryItemSlots.Length) break;
-
-            InventoryItemSlot slot = inventoryItemSlots[slotIndex];
-            if (slot == null || slot.slotRoot == null) continue;
-
             ItemData firstItem = kvp.Value[0];
             int count = kvp.Value.Count;
 
-            slot.slotRoot.SetActive(true);
+            // 프리팹 생성
+            GameObject slotObj = Instantiate(inventoryItemSlotPrefab, inventoryItemContainer);
 
-            // ★ 아이콘 표시
-            if (slot.imgIcon != null)
+            // 컴포넌트 찾기
+            Image imgIcon = slotObj.transform.Find("Canvas/Itme/IconImage")?.GetComponent<Image>();
+            TMP_Text txtCount = slotObj.transform.Find("Canvas/Itme/Text (TMP)")?.GetComponent<TMP_Text>();
+            Button btnSlot = slotObj.GetComponent<Button>();
+
+
+            // 아이콘 설정
+            if (imgIcon != null)
             {
                 if (firstItem.icon != null)
                 {
-                    slot.imgIcon.sprite = firstItem.icon;
-                    slot.imgIcon.enabled = true;
+                    imgIcon.sprite = firstItem.icon;
+                    imgIcon.enabled = true;
                 }
                 else
                 {
-                    slot.imgIcon.enabled = false;
+                    imgIcon.enabled = false;
                 }
             }
 
-            // ★ 개수 표시
-            if (slot.txtCount != null)
+            // 개수 설정
+            if (txtCount != null)
             {
                 if (count > 1)
                 {
-                    slot.txtCount.text = $"x{count}";
-                    slot.txtCount.gameObject.SetActive(true);
+                    txtCount.text = $"x{count}";
+                    txtCount.gameObject.SetActive(true);
                 }
                 else
                 {
-                    slot.txtCount.gameObject.SetActive(false);
+                    txtCount.gameObject.SetActive(false);
                 }
             }
 
-            // 버튼 클릭 시 하단에 정보 표시
-            if (slot.btnSlot != null)
+            // 버튼 클릭 이벤트
+            if (btnSlot != null)
             {
-                slot.btnSlot.onClick.RemoveAllListeners();
                 ItemData itemToShow = firstItem;
-                slot.btnSlot.onClick.AddListener(() => ShowInventoryItemInfo(itemToShow));
-            }
-
-            slotIndex++;
-        }
-
-        // ★ 남은 슬롯 완전히 비활성화
-        for (int i = slotIndex; i < inventoryItemSlots.Length; i++)
-        {
-            if (inventoryItemSlots[i] != null && inventoryItemSlots[i].slotRoot != null)
-            {
-                inventoryItemSlots[i].slotRoot.SetActive(false);
+                btnSlot.onClick.AddListener(() => ShowInventoryItemInfo(itemToShow));
             }
         }
 
