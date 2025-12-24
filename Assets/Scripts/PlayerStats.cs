@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
 
 public class PlayerStats : MonoBehaviour
 {
@@ -12,15 +14,11 @@ public class PlayerStats : MonoBehaviour
 
     public bool hasLastStandUsed = false;
     public bool lastStandTriggeredThisHit = false;
-    private readonly string ANIM_EVADE = "Evade";
-    private readonly string ANIM_HIT = "Hit";
-    [Header("Animation")]
-    public Animator animator;
-    void Awake()
-    {
-        if (animator == null)
-            animator = GetComponent<Animator>();
-    }
+
+    [Header("Visual Effects")]
+    public List<SpriteRenderer> spriteRenderers = new List<SpriteRenderer>();  // ★ 추가
+    public float hitFlashDuration = 0.2f;   // 피격 깜빡임 시간
+    public float evadeFadeDuration = 0.3f;  // 회피 페이드 시간
 
     public void UpdateStatsForStage(int newStage)
     {
@@ -50,15 +48,13 @@ public class PlayerStats : MonoBehaviour
         if (Random.value < evadeChance)
         {
             Debug.Log("플레이어 회피!");
-
-            // ★ 회피 애니메이션
-            if (animator != null)
-                animator.SetTrigger(ANIM_EVADE);
+            if (AudioManager.Instance != null)
+                AudioManager.Instance.PlaySE("MobAttackMiss");
+            // ★ 회피 이펙트 (투명도 낮추기)
+            StartCoroutine(EvadeEffect());
 
             return;
         }
-        if (animator != null)
-            animator.SetTrigger(ANIM_HIT);
 
         float remaining = damage;
 
@@ -77,6 +73,11 @@ public class PlayerStats : MonoBehaviour
                 if (AudioManager.Instance != null)
                     AudioManager.Instance.PlaySE("ShieldBroke");
             }
+            else
+            {
+                if (AudioManager.Instance != null)
+                    AudioManager.Instance.PlaySE("ShieldDamage");
+            }
         }
 
         // 3) 남은 데미지를 HP에 적용
@@ -84,6 +85,9 @@ public class PlayerStats : MonoBehaviour
         {
             currentHP -= remaining;
             Debug.Log($"플레이어가 {remaining} 피해를 받음. HP: {currentHP:F1}/{maxHP:F1}");
+            // ★ 피격 이펙트 (빨갛게 깜빡이기)
+            StartCoroutine(HitEffect());
+
         }
 
         // 4) 라스트 스탠드
@@ -103,6 +107,65 @@ public class PlayerStats : MonoBehaviour
         if (hud != null)
         {
             hud.UpdateUI();
+        }
+    }
+    IEnumerator HitEffect()
+    {
+        if (spriteRenderers.Count == 0) yield break;
+
+        Color hitColor = new Color(1f, 0.3f, 0.3f, 1f);  // 빨간색
+        List<Color> originalColors = new List<Color>();
+
+        // 원래 색상 저장
+        foreach (var sr in spriteRenderers)
+        {
+            if (sr != null)
+            {
+                originalColors.Add(sr.color);
+                sr.color = hitColor;
+            }
+        }
+
+        yield return new WaitForSeconds(hitFlashDuration);
+
+        // 원래 색상으로 복구
+        for (int i = 0; i < spriteRenderers.Count; i++)
+        {
+            if (spriteRenderers[i] != null && i < originalColors.Count)
+            {
+                spriteRenderers[i].color = originalColors[i];
+            }
+        }
+    }
+
+    // ★ 회피 이펙트 - 투명도 낮추기
+    IEnumerator EvadeEffect()
+    {
+        if (spriteRenderers.Count == 0) yield break;
+
+        List<Color> originalColors = new List<Color>();
+
+        // 원래 색상 저장 & 투명도 낮추기
+        foreach (var sr in spriteRenderers)
+        {
+            if (sr != null)
+            {
+                originalColors.Add(sr.color);
+                Color fadeColor = sr.color;
+                fadeColor.a = 0.3f;  // 투명도 30%
+                sr.color = fadeColor;
+            }
+        }
+
+        yield return new WaitForSeconds(evadeFadeDuration);
+
+        // 원래 색상으로 복구
+        for (int i = 0; i < spriteRenderers.Count; i++)
+        {
+            if (spriteRenderers[i] != null && i < originalColors.Count)
+            {
+                spriteRenderers[i].color = originalColors[i];
+            }
         }
     }
 

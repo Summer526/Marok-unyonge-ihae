@@ -111,27 +111,7 @@ public class GameManager : MonoBehaviour
         killCount = 0;
         gold = 0;
 
-        if (player == null)
-        {
-            player = FindObjectOfType<PlayerStats>();
-        }
-
-        // ★ 여전히 없으면 생성
-        if (player == null && playerPrefab != null && playerSpawnPoint != null)
-        {
-            GameObject playerObj = Instantiate(playerPrefab, playerSpawnPoint.position, Quaternion.identity);
-            player = playerObj.GetComponent<PlayerStats>();
-        }
-
-
-        // 플레이어 상태 초기화
-        if (player != null)
-        {
-            player.hasLastStandUsed = false;
-            player.lastStandTriggeredThisHit = false;
-            player.shield = 0f;
-            player.UpdateStatsForStage(stage);
-        }
+        SetupPlayer();
 
         // 보드 초기화
         if (gridManager != null)
@@ -168,12 +148,45 @@ public class GameManager : MonoBehaviour
         UpdateAllUI();
         StartPlayerTurn();
     }
+    void SetupPlayer()
+    {
+        if (player != null)
+        {
+            Destroy(player.gameObject);
+            player = null;
+            Debug.Log("기존 플레이어 삭제");
+        }
+
+        // ★ 플레이어 새로 생성
+        if (playerPrefab != null && playerSpawnPoint != null)
+        {
+            Debug.Log($"플레이어 생성 위치: {playerSpawnPoint.position}");
+            GameObject playerObj = Instantiate(playerPrefab, playerSpawnPoint.position, Quaternion.identity);
+            playerObj.name = "Player";
+            player = playerObj.GetComponent<PlayerStats>();
+            Debug.Log($"플레이어 생성 완료: {player != null}");
+        }
+        else
+        {
+            Debug.LogError($"playerPrefab: {playerPrefab != null}, playerSpawnPoint: {playerSpawnPoint != null}");
+        }
+
+        // 플레이어 스탯 초기화
+        if (player != null)
+        {
+            player.hasLastStandUsed = false;
+            player.lastStandTriggeredThisHit = false;
+            player.shield = 0f;
+            player.UpdateStatsForStage(stage);
+        }
+    }
     void SpawnEnemy()
     {
         if (currentEnemy != null)
         {
             Destroy(currentEnemy.gameObject);
         }
+        EnemyStats.availableElements = enemyElements;
 
         // ★ 현재 스테이지에 맞는 프리팹 선택
         GameObject selectedPrefab = SelectRandomEnemyPrefab();
@@ -269,18 +282,28 @@ public class GameManager : MonoBehaviour
             if (comboManager != null)
             {
                 comboManager.OnNonAttack();
+
+                if (uiManager != null)
+                {
+                    uiManager.UpdateComboUI(comboManager.comboStreak);
+                }
             }
             gridManager.ResetSwapCount();
             StartEnemyTurn();
             return;
         }
 
-        // 콤보 계산 (아이템은 나중에)
+        // ★ 콤보 계산 - 여기 한 번만!
         float comboMult = 1f;
         if (comboManager != null)
         {
-            comboManager.OnAttack(element);
+            comboManager.OnAttack(element);  // ★ 이것만 남기기
             comboMult = comboManager.GetComboMultiplier();
+
+            if (uiManager != null)
+            {
+                uiManager.UpdateComboUI(comboManager.comboStreak);
+            }
         }
 
         int chainCount = chain.Count;
@@ -289,7 +312,7 @@ public class GameManager : MonoBehaviour
             chainCount = 10;
             Debug.Log("세븐 오브 컬렉션! 최소 10체인 보장");
         }
-        // 체인 부스터 적용
+
         if (itemManager != null)
         {
             chainCount = itemManager.GetEffectiveChainCount(chainCount);
@@ -297,15 +320,12 @@ public class GameManager : MonoBehaviour
 
         float baseAtk = player.GetCurrentATK();
 
-        // 공격력 보너스 적용
         if (itemManager != null)
         {
             baseAtk = itemManager.ApplyAttackBonus(baseAtk);
         }
 
         float chainMult = GetChainMultiplier(chainCount);
-
-        // === 여기부터 상성 배수 추가 ===
         ElementType enemyElement = currentEnemy.elementType;
         float affinityMult = GetElementAffinity(element, enemyElement);
 
@@ -315,22 +335,11 @@ public class GameManager : MonoBehaviour
             $"공격: 공격속성={element}, 적속성={enemyElement}, 체인={chainCount}, 콤보배수={comboMult:F2}, 상성배수={affinityMult:F2}, 최종데미지={damage:F1}"
         );
 
-        // 방어막 형성 적용
         if (itemManager != null)
         {
             itemManager.ApplyBarrierOnDamage(player, damage);
         }
-        if (comboManager != null)
-        {
-            comboManager.OnAttack(element);
-            comboMult = comboManager.GetComboMultiplier();
 
-            // ★ 콤보 UI 업데이트
-            if (uiManager != null)
-            {
-                uiManager.UpdateComboUI(comboManager.comboStreak);
-            }
-        }
         gridManager.ApplyAdditionalRandomRemove();
         gridManager.FillEmptyTiles();
         gridManager.ResetSwapCount();
@@ -357,7 +366,10 @@ public class GameManager : MonoBehaviour
             {
                 comboManager.OnNonAttack();
             }
-
+            if (uiManager != null)
+            {
+                uiManager.UpdateComboUI(comboManager.comboStreak);
+            }
             gridManager.ResetSwapCount();
             StartCoroutine(DelayedEnemyTurn());
             return;
@@ -414,7 +426,7 @@ public class GameManager : MonoBehaviour
             {
                 comboManager.OnNonAttack();
 
-                // ★ 콤보 UI 업데이트
+                // ★ 콤보 UI 즉시 업데이트
                 if (uiManager != null)
                 {
                     uiManager.UpdateComboUI(comboManager.comboStreak);
@@ -428,13 +440,22 @@ public class GameManager : MonoBehaviour
 
         int chainCount = chain.Count;
 
-        // 최대체력의 3% * 체인수 만큼 쉴드
         float shieldAmount = player.maxHP * 0.03f * chainCount;
         player.AddShield(shieldAmount);
 
         Debug.Log($"쉴드 획득: 체인={chainCount}, 쉴드+{shieldAmount:F1} (현재 {player.shield:F1})");
 
-        // 쉴드도 타일 실제로 지울지/안 지울지는 기획에 따라
+        if (comboManager != null)
+        {
+            comboManager.OnNonAttack();
+
+            // ★ 콤보 UI 즉시 업데이트
+            if (uiManager != null)
+            {
+                uiManager.UpdateComboUI(comboManager.comboStreak);
+            }
+        }
+
         gridManager.RemoveTiles(chain);
         gridManager.ApplyAdditionalRandomRemove();
         gridManager.FillEmptyTiles();
@@ -591,6 +612,12 @@ public class GameManager : MonoBehaviour
         if (player.lastStandTriggeredThisHit && comboManager != null)
         {
             comboManager.ResetCombo();
+
+            // ★ 콤보 UI 업데이트
+            if (uiManager != null)
+            {
+                uiManager.UpdateComboUI(comboManager.comboStreak);
+            }
         }
 
         if (player.IsDead())
@@ -603,8 +630,8 @@ public class GameManager : MonoBehaviour
 
     float GetElementAffinity(ElementType attack, ElementType defense)
     {
-        float strong = 1.5f; // 유리할 때 배수
-        float weak = 0.5f;   // 불리할 때 배수
+        float strong = 1.25f; // 유리할 때 배수
+        float weak = 0.3f;   // 불리할 때 배수
 
         // Heal, Shield는 상성 없음
         if (attack == ElementType.Heal || defense == ElementType.Heal ||

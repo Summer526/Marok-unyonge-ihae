@@ -1017,7 +1017,7 @@ SpriteRenderer:
   m_SortingOrder: 21
   m_MaskInteraction: 0
   m_Sprite: {fileID: 5295492386563293016, guid: 1fdbc9ecc4551364d940fcf122b6af67, type: 3}
-  m_Color: {r: 0, g: 0.7854166, b: 1, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -3743,7 +3743,9 @@ MonoBehaviour:
   maxShield: 40
   hasLastStandUsed: 0
   lastStandTriggeredThisHit: 0
-  animator: {fileID: 0}
+  spriteRenderers: []
+  hitFlashDuration: 0.2
+  evadeFadeDuration: 0.3
 --- !u!4 &1549538389195595238 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2880357165289652280, guid: ebea5f8b8163f9a4ab9d9a1b45444e28, type: 3}

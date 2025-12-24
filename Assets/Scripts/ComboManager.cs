@@ -3,7 +3,7 @@
 public class ComboManager : MonoBehaviour
 {
     public ElementType? lastAttackElement = null;
-    public int comboStreak = 1;
+    public int comboStreak = 0;
     public int nonAttackInARow = 0;
 
     private ItemManager itemManager;
@@ -12,13 +12,12 @@ public class ComboManager : MonoBehaviour
     {
         itemManager = itemMgr;
         lastAttackElement = null;
-        comboStreak = 1;
+        comboStreak = 0;
         nonAttackInARow = 0;
     }
 
     public void OnAttack(ElementType element)
     {
-        // 속성 공명 체크
         bool isSameGroup = false;
 
         if (lastAttackElement.HasValue)
@@ -29,13 +28,11 @@ public class ComboManager : MonoBehaviour
             }
             else if (itemManager != null && itemManager.hasResonance)
             {
-                // ★ 새로운 공명 체크 방식
                 bool lastInResonance = itemManager.IsElementInActiveResonance(lastAttackElement.Value);
                 bool currentInResonance = itemManager.IsElementInActiveResonance(element);
 
                 if (lastInResonance && currentInResonance)
                 {
-                    // 같은 공명서에 속하는지 체크
                     isSameGroup = itemManager.AreElementsInSameResonance(lastAttackElement.Value, element);
                 }
             }
@@ -91,7 +88,7 @@ public class ComboManager : MonoBehaviour
     }
     public float GetComboMultiplier()
     {
-        float mult = 1f + 0.15f * (comboStreak - 1);
+        float mult = 1f + 0.05f * (comboStreak - 1);
         return Mathf.Min(mult, 2f);
     }
 }

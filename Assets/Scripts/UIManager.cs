@@ -220,16 +220,30 @@ public class UIManager : MonoBehaviour
     }
     public void UpdateComboUI(int comboStreak)
     {
-        if (txtCombo == null) return;
-
-        if (comboStreak > 1)
+        if (comboObject == null)
         {
-            txtCombo.text = $"x{comboStreak}";
-            txtCombo.gameObject.SetActive(true);
+            Debug.LogWarning("comboObject가 null입니다! Inspector에서 할당하세요.");
+            return;
+        }
+
+        if (txtCombo == null)
+        {
+            Debug.LogWarning("txtCombo가 null입니다! Inspector에서 할당하세요.");
+            return;
+        }
+
+        if (comboStreak > 0)
+        {
+            txtCombo.text = $"{comboStreak}콤보";
+
+            if (!comboObject.activeSelf)
+            {
+                comboObject.SetActive(true);
+            }
         }
         else
         {
-            // ★ 콤보가 1로 떨어지면 잠시 후 비활성화
+            // 콤보가 1로 떨어지면 잠시 후 비활성화
             if (comboObject.activeSelf)
             {
                 StartCoroutine(HideComboAfterDelay());
@@ -584,12 +598,8 @@ public class UIManager : MonoBehaviour
         RefreshInGameInfo(stage, killCount, gold);
         UpdateSwapCountUI();
         UpdateElementDisplay();
-        if (!PlayerPrefs.HasKey("StoryShown"))
-        {
-            ShowStoryPanel();
-            PlayerPrefs.SetInt("StoryShown", 1);
-            PlayerPrefs.Save();
-        }
+        UpdateComboUI(0);
+        ShowStoryPanel();
     }
 
     public void RefreshInGameInfo(int stage, int killCount, int gold)

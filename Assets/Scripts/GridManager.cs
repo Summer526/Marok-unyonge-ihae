@@ -16,7 +16,8 @@ public class GridManager : MonoBehaviour
     [Header("Grid Visual")]
     public GameObject cellPrefab;   // 칸 배경 프리팹 (선택)
     public float cellZOffset = 1f;  // 타일보다 뒤로 가게 Z 오프셋
-    
+    public float tileScale = 1f;
+
     [Header("기본 타일 프리팹 (예비용)")]
     public GameObject tilePrefab;   // elementConfigs에 해당 속성이 없을 때 사용
 
@@ -134,16 +135,12 @@ public class GridManager : MonoBehaviour
 
     void SpawnTileAt(int x, int y)
     {
-        // gridParent 기준 로컬 좌표
         Vector3 localPos = new Vector3(x * tileSpacing, y * tileSpacing, 0f);
 
-        // 1) 어떤 속성의 타일을 뽑을지 먼저 결정
         ElementType randomType = GetRandomElement();
 
-        // 2) 기본 프리팹으로 시작
         GameObject prefabToUse = tilePrefab;
 
-        // 3) elementConfigs에 이 속성용 프리팹이 있으면 그걸 사용
         if (elementConfigs != null)
         {
             for (int i = 0; i < elementConfigs.Length; i++)
@@ -157,9 +154,9 @@ public class GridManager : MonoBehaviour
             }
         }
 
-        // 4) 선택된 프리팹으로 타일 생성 (로컬 좌표로 배치)
         GameObject tileObj = Instantiate(prefabToUse, gridParent);
         tileObj.transform.localPosition = localPos;
+        tileObj.transform.localScale = Vector3.one * tileScale;  // ★ 크기 적용
 
         Tile tile = tileObj.GetComponent<Tile>();
         if (tile == null)
@@ -170,6 +167,37 @@ public class GridManager : MonoBehaviour
 
         tile.Initialize(this, new Vector2Int(x, y), randomType);
         tiles[x, y] = tile;
+    }
+
+    Tile CreateTileAt(int x, int y, ElementType element, Vector3 worldPos)
+    {
+        GameObject prefabToUse = tilePrefab;
+
+        if (elementConfigs != null)
+        {
+            foreach (var cfg in elementConfigs)
+            {
+                if (cfg != null && cfg.element == element && cfg.tilePrefab != null)
+                {
+                    prefabToUse = cfg.tilePrefab;
+                    break;
+                }
+            }
+        }
+
+        GameObject tileObj = Instantiate(prefabToUse, gridParent);
+        tileObj.transform.position = worldPos;
+        tileObj.transform.localScale = Vector3.one * tileScale;  // ★ 크기 적용
+
+        Tile tile = tileObj.GetComponent<Tile>();
+        if (tile == null)
+        {
+            Debug.LogError($"타일 프리팹에 Tile 컴포넌트가 없습니다: {prefabToUse.name}");
+            return null;
+        }
+
+        tile.Initialize(this, new Vector2Int(x, y), element);
+        return tile;
     }
 
 
@@ -317,37 +345,7 @@ public class GridManager : MonoBehaviour
         if (AudioManager.Instance != null)
             AudioManager.Instance.PlaySE("Swap");
     }
-    Tile CreateTileAt(int x, int y, ElementType element, Vector3 worldPos)
-    {
-        // 1) 해당 속성의 프리팹 찾기
-        GameObject prefabToUse = tilePrefab;
-
-        if (elementConfigs != null)
-        {
-            foreach (var cfg in elementConfigs)
-            {
-                if (cfg != null && cfg.element == element && cfg.tilePrefab != null)
-                {
-                    prefabToUse = cfg.tilePrefab;
-                    break;
-                }
-            }
-        }
-
-        // 2) 생성
-        GameObject tileObj = Instantiate(prefabToUse, gridParent);
-        tileObj.transform.position = worldPos;
-
-        Tile tile = tileObj.GetComponent<Tile>();
-        if (tile == null)
-        {
-            Debug.LogError($"타일 프리팹에 Tile 컴포넌트가 없습니다: {prefabToUse.name}");
-            return null;
-        }
-
-        tile.Initialize(this, new Vector2Int(x, y), element);
-        return tile;
-    }
+   
 
     public void ResetSwapCount()
     {
