@@ -208,7 +208,51 @@ public class ShopManager : MonoBehaviour
         if (itemManager == null)
             return item.basePrice;
 
-        return itemManager.GetDiscountedPrice(item.basePrice);
+        int finalPrice = item.basePrice;
+
+        // ★ 전공 서적 - 레벨별 가격 증가
+        if (item.isMajorBook)
+        {
+            MajorSystem majorSystem = FindObjectOfType<MajorSystem>();
+            if (majorSystem != null)
+            {
+                int currentLevel = 0;
+
+                if (item.isActiveMajor)
+                {
+                    currentLevel = majorSystem.GetMajorLevel(item.majorType);
+                }
+                else
+                {
+                    currentLevel = majorSystem.GetPassiveLevel(item.passiveType);
+                }
+
+                // 750 × 1.5^(레벨-1)
+                // 레벨 0 (미보유): 750
+                // 레벨 1: 750
+                // 레벨 2: 1125
+                // 레벨 3: 1687
+                // 레벨 4: 2531
+                // 레벨 5: 3796 (최대 레벨이라 구매 불가)
+                if (currentLevel > 0)
+                {
+                    finalPrice = Mathf.RoundToInt(item.basePrice * Mathf.Pow(1.5f, currentLevel - 1));
+                }
+            }
+        }
+
+        // 할인 적용
+        finalPrice = itemManager.GetDiscountedPrice(finalPrice);
+
+        // Dragon 전공 - 가격 증가
+        MajorSystem majorSys = FindObjectOfType<MajorSystem>();
+        if (majorSys != null)
+        {
+            float dragonMult = majorSys.GetDragonShopPriceMultiplier();
+            finalPrice = Mathf.RoundToInt(finalPrice * dragonMult);
+        }
+
+        return finalPrice;
     }
 
     public bool TryBuyItem(ItemData item)

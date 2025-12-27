@@ -149,8 +149,6 @@ public class ItemManager : MonoBehaviour
             return;
         }
 
-        ownedItems.Add(item);
-
         switch (item.itemType)
         {
             case ItemType.AttributeResonance:
@@ -219,6 +217,44 @@ public class ItemManager : MonoBehaviour
                 madisHandCount++;
                 Debug.Log($"마디스의 손 획득: 몹 처치 골드 +{madisHandCount * 20}%");
                 break;
+            case ItemType.ChaosDice:
+                // 혼돈 주사위는 사용 시 효과이므로 여기서는 패스
+                Debug.Log("혼돈 주사위 획득");
+                break;
+
+            case ItemType.FixPin:
+                // 고정핀 아이템 획득
+                PinSystem pinSystem = FindObjectOfType<PinSystem>();
+                if (pinSystem != null)
+                {
+                    pinSystem.AddPin(3); // 3개 제공
+                }
+                Debug.Log("고정핀 3개 획득");
+                break;
+
+            case ItemType.Vampire:
+            case ItemType.Doping:
+            case ItemType.DoubleBlade:
+            case ItemType.BlackContract:
+            case ItemType.LizardTail:
+            case ItemType.ResidueMana:
+            case ItemType.DeadCoin:
+                // 무한모드 아이템은 EndlessModeManager에서 처리
+                if (EndlessModeManager.Instance != null)
+                {
+                    EndlessModeManager.Instance.AddItem(item.itemType);
+                }
+                break;
+
+            case ItemType.Tent:
+                // 텐트는 액티브 아이템 (사용 시 효과)
+                Debug.Log("텐트 획득");
+                break;
+
+            case ItemType.MajorBook:
+                // 전공 서적은 액티브 아이템 (사용 시 레벨업)
+                Debug.Log("전공 서적 획득");
+                break;
         }
     }
     public bool UseActiveItem(ItemData item)
@@ -248,6 +284,18 @@ public class ItemManager : MonoBehaviour
                 // UI 열기는 UIManager에서 처리
                 success = true;
                 break;
+            case ItemType.ChaosDice:
+                success = UseChaosDice();
+                break;
+
+            case ItemType.Tent:
+                success = UseTent();
+                break;
+
+            case ItemType.MajorBook:
+                success = UseMajorBook(item);
+                break;
+
         }
 
         // ★ 소모성 아이템이면 제거
@@ -255,6 +303,95 @@ public class ItemManager : MonoBehaviour
         {
             ownedItems.Remove(item);
             Debug.Log($"{item.displayName} 사용 완료 (소모)");
+        }
+
+        return success;
+    }
+    bool UseChaosDice()
+    {
+        // 20% 확률로 보드 섞기
+        if (Random.value < 0.2f)
+        {
+            GridManager gridMgr = FindObjectOfType<GridManager>();
+            PinSystem pinSystem = FindObjectOfType<PinSystem>();
+
+            if (gridMgr != null)
+            {
+                gridMgr.ShuffleUnpinnedTiles(pinSystem);
+                Debug.Log("혼돈 주사위 발동! 보드 섞기");
+            }
+        }
+        else
+        {
+            Debug.Log("혼돈 주사위: 효과 없음");
+        }
+
+        // 기본 공격력 +5 (영구)
+        PlayerStats player = FindObjectOfType<PlayerStats>();
+        if (player != null)
+        {
+            player.baseATK += 5f;
+            Debug.Log("혼돈 주사위: 기본 공격력 +5");
+        }
+
+        return true;
+    }
+
+    bool UseTent()
+    {
+        if (EndlessModeManager.Instance != null)
+        {
+            EndlessModeManager.Instance.UseTent();
+            return true;
+        }
+
+        return false;
+    }
+
+    bool UseMajorBook(ItemData item)
+    {
+        if (item == null || !item.isMajorBook)
+        {
+            Debug.Log("전공 서적이 아닙니다!");
+            return false;
+        }
+
+        MajorSystem majorSystem = FindObjectOfType<MajorSystem>();
+        if (majorSystem == null)
+        {
+            Debug.Log("MajorSystem을 찾을 수 없습니다!");
+            return false;
+        }
+
+        bool success = false;
+
+        if (item.isActiveMajor)
+        {
+            // 액티브 전공 서적
+            success = majorSystem.UseMajorBook(true, item.majorType, PassiveType.None);
+
+            if (success)
+            {
+                Debug.Log($"{item.majorType} 전공 서적 사용 완료!");
+            }
+            else
+            {
+                Debug.Log($"{item.majorType} 전공을 보유하고 있지 않아 사용할 수 없습니다!");
+            }
+        }
+        else
+        {
+            // 페시브 전공 서적
+            success = majorSystem.UseMajorBook(false, MajorType.None, item.passiveType);
+
+            if (success)
+            {
+                Debug.Log($"{item.passiveType} 전공 서적 사용 완료!");
+            }
+            else
+            {
+                Debug.Log($"{item.passiveType} 전공을 보유하고 있지 않아 사용할 수 없습니다!");
+            }
         }
 
         return success;
@@ -610,12 +747,15 @@ public class ItemManager : MonoBehaviour
     /// <summary>
     /// 특정 아이템을 몇 개 소유하고 있는지 반환
     /// </summary>
-    public int GetItemCount(ItemType itemType)
+    public int GetItemCount(ItemData targetItem)
     {
+        if (targetItem == null) return 0;
+
         int count = 0;
         foreach (var item in ownedItems)
         {
-            if (item != null && item.itemType == itemType)
+            // ★ ScriptableObject 레퍼런스 비교
+            if (item == targetItem)
                 count++;
         }
         return count;
@@ -629,7 +769,7 @@ public class ItemManager : MonoBehaviour
         if (item == null) return false;
         if (item.maxStack <= 0) return true; // 무제한
 
-        int currentCount = GetItemCount(item.itemType);
+        int currentCount = GetItemCount(item);
         return currentCount < item.maxStack;
     }
     public bool HasAllSevenOrbs()

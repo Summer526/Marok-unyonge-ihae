@@ -74,21 +74,47 @@ public class GameManager : MonoBehaviour
 
     [Header("Tutorial")]
     public ItemData howToPlayItem;
+
+    [Header("Endless Mode")]
+    public EndlessModeManager endlessModeManager;
+    public MajorSystem majorSystem;
+    public PinSystem pinSystem;
     void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
 
-            // 씬 안에서 다른 매니저들 찾아오기
             gridManager = FindObjectOfType<GridManager>();
             comboManager = FindObjectOfType<ComboManager>();
             itemManager = FindObjectOfType<ItemManager>();
             shopManager = FindObjectOfType<ShopManager>();
             uiManager = FindObjectOfType<UIManager>();
+            endlessModeManager = FindObjectOfType<EndlessModeManager>();
+            majorSystem = FindObjectOfType<MajorSystem>();
+            pinSystem = FindObjectOfType<PinSystem>();
+
             if (shopManager != null && itemManager != null)
             {
                 shopManager.Initialize(this, itemManager);
+            }
+
+            // 무한모드 매니저 초기화
+            if (endlessModeManager != null)
+            {
+                endlessModeManager.Initialize();
+            }
+
+            // 전공 시스템 초기화
+            if (majorSystem != null && gridManager != null && player != null)
+            {
+                majorSystem.Initialize(gridManager, player);
+            }
+
+            // 고정핀 시스템 초기화
+            if (pinSystem != null && gridManager != null)
+            {
+                pinSystem.Initialize(gridManager);
             }
 
             InitializeBackgrounds();
@@ -180,7 +206,7 @@ public class GameManager : MonoBehaviour
             player.UpdateStatsForStage(stage);
         }
     }
-    void SpawnEnemy()
+    public void SpawnEnemy()
     {
         if (currentEnemy != null)
         {
@@ -289,15 +315,22 @@ public class GameManager : MonoBehaviour
                 }
             }
             gridManager.ResetSwapCount();
+
+            // ★ Rune 페널티 체크
+            if (majorSystem != null)
+            {
+                majorSystem.CheckRunePenalty(0, player);
+            }
+
             StartEnemyTurn();
             return;
         }
 
-        // ★ 콤보 계산 - 여기 한 번만!
+        // 콤보 계산
         float comboMult = 1f;
         if (comboManager != null)
         {
-            comboManager.OnAttack(element);  // ★ 이것만 남기기
+            comboManager.OnAttack(element);
             comboMult = comboManager.GetComboMultiplier();
 
             if (uiManager != null)
@@ -318,6 +351,12 @@ public class GameManager : MonoBehaviour
             chainCount = itemManager.GetEffectiveChainCount(chainCount);
         }
 
+        // ★ Rune 체인 추가
+        if (majorSystem != null)
+        {
+            chainCount = majorSystem.ApplyRuneChainBonus(chainCount);
+        }
+
         float baseAtk = player.GetCurrentATK();
 
         if (itemManager != null)
@@ -326,14 +365,89 @@ public class GameManager : MonoBehaviour
         }
 
         float chainMult = GetChainMultiplier(chainCount);
+
+        // ★ Pure 전공 - 체인 계수 조정
+        if (majorSystem != null)
+        {
+            chainMult = majorSystem.ApplyPureChainMultiplier(chainMult);
+        }
+
         ElementType enemyElement = currentEnemy.elementType;
         float affinityMult = GetElementAffinity(element, enemyElement);
 
+        // ★ Dragon 전공 - 상성 배수 증가
+        if (majorSystem != null)
+        {
+            affinityMult = majorSystem.ApplyDragonAffinityBonus(affinityMult);
+        }
+
         float damage = baseAtk * chainMult * comboMult * affinityMult;
+
+        // ★ Fire_Explosion 페시브
+        if (majorSystem != null)
+        {
+            float explosionDamage;
+            if (majorSystem.TryFireExplosion(out explosionDamage))
+            {
+                damage += explosionDamage;
+                Debug.Log($"Fire_Explosion 발동! +{explosionDamage} 데미지");
+            }
+        }
+
+        // 무한모드 - 잔류 마나 추가
+        if (endlessModeManager != null)
+        {
+            damage += endlessModeManager.ConsumeResidueMana();
+        }
+
+        // 무한모드 - 검은 계약서 보너스
+        if (endlessModeManager != null)
+        {
+            damage = endlessModeManager.ApplyBlackContractBonus(damage);
+        }
+
+        // 전공 시스템 - 데미지 보정
+        if (majorSystem != null)
+        {
+            damage = majorSystem.ApplyDamageModifier(damage, chainCount);
+        }
+
+        // ★ Barrier 전공 - 내 데미지 감소
+        if (majorSystem != null)
+        {
+            damage = majorSystem.ApplyBarrierDamagePenalty(damage);
+        }
 
         Debug.Log(
             $"공격: 공격속성={element}, 적속성={enemyElement}, 체인={chainCount}, 콤보배수={comboMult:F2}, 상성배수={affinityMult:F2}, 최종데미지={damage:F1}"
         );
+
+        // ★ Dark_Death 몹 즉사 확률
+        bool instantKill = false;
+        if (majorSystem != null && majorSystem.TryDarkDeathInstantKill(true))
+        {
+            instantKill = true;
+            currentEnemy.currentHP = 0f;
+            Debug.Log("Dark_Death: 몹 즉사!");
+        }
+
+        // ★ Lightning_Bolt 마비
+        if (majorSystem != null)
+        {
+            majorSystem.TryLightningStun(currentEnemy);
+        }
+
+        // ★ Light_Holy 회복
+        if (majorSystem != null)
+        {
+            majorSystem.TryLightHolyHeal(damage, player);
+        }
+
+        // 무한모드 - 흡혈
+        if (endlessModeManager != null)
+        {
+            endlessModeManager.ApplyVampireHeal(damage);
+        }
 
         if (itemManager != null)
         {
@@ -344,10 +458,66 @@ public class GameManager : MonoBehaviour
         gridManager.FillEmptyTiles();
         gridManager.ResetSwapCount();
 
-        UpdateAllUI();
-        StartCoroutine(DelayedEndPlayerTurn(PlayerActionType.Attack, damage, 0f));
-    }
+        // ★ Rune 체인 저장
+        if (majorSystem != null)
+        {
+            majorSystem.SaveRuneChain(chainCount);
+        }
 
+        UpdateAllUI();
+        StartCoroutine(DelayedEndPlayerTurn(PlayerActionType.Attack, damage, 0f, instantKill));
+    }
+    IEnumerator DelayedEndPlayerTurn(PlayerActionType actionType, float damage, float heal, bool instantKill = false)
+    {
+        yield return new WaitForSeconds(actionDelay);
+
+        if (actionType == PlayerActionType.Attack)
+        {
+            if (!instantKill)
+            {
+                currentEnemy.TakeDamage(damage);
+            }
+
+            Debug.Log($"몹에게 {damage} 데미지!");
+
+            // ★ Water_Snow - 원킬 체크
+            bool wasOneShot = (currentEnemy.currentHP + damage >= currentEnemy.maxHP);
+
+            UpdateAllUI();
+
+            if (currentEnemy.IsDead())
+            {
+                // ★ Water_Snow 원킬 보너스
+                if (wasOneShot && majorSystem != null)
+                {
+                    majorSystem.ApplyWaterSnowKill(player);
+                }
+
+                yield return new WaitForSeconds(0.5f);
+                OnEnemyKilled();
+                yield break;
+            }
+        }
+        else if (actionType == PlayerActionType.Heal)
+        {
+            player.Heal(heal);
+            Debug.Log($"플레이어 {heal} 회복!");
+            UpdateAllUI();
+
+            if (AudioManager.Instance != null)
+                AudioManager.Instance.PlaySE("Heal");
+        }
+        else if (actionType == PlayerActionType.Shield)
+        {
+            Debug.Log($"플레이어 쉴드 턴 종료 (현재 쉴드: {player.shield:F1})");
+            UpdateAllUI();
+
+            if (AudioManager.Instance != null)
+                AudioManager.Instance.PlaySE("MakeShield");
+        }
+
+        StartCoroutine(DelayedEnemyTurn());
+    }
     // Heal 속성으로 회복
     public void PlayerHeal()
     {
@@ -528,7 +698,23 @@ public class GameManager : MonoBehaviour
         killCount++;
         stage++;
 
-        // 골드 획득 (난이도 구간별로 다른 기본 골드)
+        // ★ 무한모드 - 오버킬 계산
+        if (endlessModeManager != null && currentEnemy != null)
+        {
+            float overkill = Mathf.Abs(currentEnemy.currentHP); // 음수값
+            if (overkill > 0f)
+            {
+                endlessModeManager.StoreResidueMana(overkill);
+            }
+        }
+
+        // ★ 무한모드 - 층 클리어 처리
+        if (currentGameMode == GameMode.Endless && endlessModeManager != null)
+        {
+            endlessModeManager.OnFloorCleared();
+        }
+
+        // 골드 획득
         int baseGold;
         if (stage <= 30)
         {
@@ -542,14 +728,27 @@ public class GameManager : MonoBehaviour
         {
             baseGold = 20;
         }
+
         int totalGold = baseGold + currentEnemy.goldBonus;
+
+        if (majorSystem != null && comboManager != null)
+        {
+            totalGold = majorSystem.ApplyEarthCrystalGold(totalGold, comboManager.comboStreak);
+        }
+
+        // ★ 무한모드 - 망자의 동전 골드 보너스
+        if (endlessModeManager != null)
+        {
+            totalGold = endlessModeManager.ApplyDeadCoinBonus(totalGold);
+        }
+
         if (itemManager != null)
         {
             gold += itemManager.GetGoldOnKill(totalGold);
         }
         else
         {
-            gold += baseGold;
+            gold += totalGold;
         }
 
         Debug.Log($"몹 처치! 킬카운트: {killCount}, 골드: {gold}");
@@ -565,19 +764,17 @@ public class GameManager : MonoBehaviour
 
         if (killCount % 3 == 0)
         {
-            // 2×2 → 2×3 → 3×3 → 3×4 → ...
+            // 보드 확장
             if (boardSize == 2 && gridManager.height == 2)
             {
-                gridManager.ResizeGrid(2, 3); // 2×3
+                gridManager.ResizeGrid(2, 3);
             }
             else if (gridManager.width == gridManager.height)
             {
-                // 정사각형이면 세로 +1
                 gridManager.ResizeGrid(gridManager.width, gridManager.height + 1);
             }
             else
             {
-                // 직사각형이면 가로 +1 (정사각형 만들기)
                 gridManager.ResizeGrid(gridManager.width + 1, gridManager.height);
             }
 
@@ -585,7 +782,7 @@ public class GameManager : MonoBehaviour
 
             if (boardSize >= 7)
             {
-                gridManager.ResizeGrid(7, 7); // 최대 7×7
+                gridManager.ResizeGrid(7, 7);
             }
         }
 
@@ -593,6 +790,7 @@ public class GameManager : MonoBehaviour
         {
             OpenShop();
         }
+
         UpdateBackground();
         SpawnEnemy();
         UpdateAllUI();
@@ -605,15 +803,25 @@ public class GameManager : MonoBehaviour
         isPlayerTurn = false;
         Debug.Log("몹 턴 시작");
 
+        // ★ Chaos 전공 - 보드 섞기
+        if (majorSystem != null && majorSystem.ShouldShuffleBoard())
+        {
+            if (gridManager != null)
+            {
+                gridManager.ShuffleUnpinnedTiles(pinSystem);
+                Debug.Log("Chaos 전공: 보드 섞기!");
+            }
+        }
+
         bool hasLastStandItem = (itemManager != null && itemManager.hasLastStand);
         currentEnemy.AttackPlayer(player, hasLastStandItem);
         UpdateAllUI();
+
         // 라스트 스탠드 발동했으면 콤보 끊기
         if (player.lastStandTriggeredThisHit && comboManager != null)
         {
             comboManager.ResetCombo();
 
-            // ★ 콤보 UI 업데이트
             if (uiManager != null)
             {
                 uiManager.UpdateComboUI(comboManager.comboStreak);
@@ -625,64 +833,72 @@ public class GameManager : MonoBehaviour
             GameOver();
             return;
         }
+
         StartPlayerTurn();
     }
 
     float GetElementAffinity(ElementType attack, ElementType defense)
     {
-        float strong = 1.25f; // 유리할 때 배수
-        float weak = 0.3f;   // 불리할 때 배수
+        float strong = 1.25f;
+        float weak = 0.3f;
 
         // Heal, Shield는 상성 없음
         if (attack == ElementType.Heal || defense == ElementType.Heal ||
             attack == ElementType.Shield || defense == ElementType.Shield)
             return 1f;
 
+        // ★ Chaos 전공 - 빛/어둠 동시 판정
+        if (majorSystem != null && majorSystem.IsChaosElement(attack))
+        {
+            float lightAffinity = GetSingleElementAffinity(ElementType.Light, defense, strong, weak);
+            float darkAffinity = GetSingleElementAffinity(ElementType.Dark, defense, strong, weak);
+
+            // 둘 중 더 유리한 쪽 선택
+            return Mathf.Max(lightAffinity, darkAffinity);
+        }
+
+        return GetSingleElementAffinity(attack, defense, strong, weak);
+    }
+
+    float GetSingleElementAffinity(ElementType attack, ElementType defense, float strong, float weak)
+    {
         // 5각형 상성: 불 → 바람 → 땅 → 번개 → 물 → 불
         switch (attack)
         {
             case ElementType.Fire:
-                // 불 > 바람, 불 < 물
                 if (defense == ElementType.Wind) return strong;
                 if (defense == ElementType.Water) return weak;
                 break;
 
             case ElementType.Wind:
-                // 바람 > 땅, 바람 < 불
                 if (defense == ElementType.Earth) return strong;
                 if (defense == ElementType.Fire) return weak;
                 break;
 
             case ElementType.Earth:
-                // 땅 > 번개, 땅 < 바람
                 if (defense == ElementType.Lightning) return strong;
                 if (defense == ElementType.Wind) return weak;
                 break;
 
             case ElementType.Lightning:
-                // 번개 > 물, 번개 < 땅
                 if (defense == ElementType.Water) return strong;
                 if (defense == ElementType.Earth) return weak;
                 break;
 
             case ElementType.Water:
-                // 물 > 불, 물 < 번개
                 if (defense == ElementType.Fire) return strong;
                 if (defense == ElementType.Lightning) return weak;
                 break;
 
             case ElementType.Light:
-                // 빛 > 어둠
                 if (defense == ElementType.Dark) return strong;
                 break;
 
             case ElementType.Dark:
-                // 어둠 > 빛
                 if (defense == ElementType.Light) return strong;
                 break;
         }
 
-        // 위에 안 걸리면 기본 1배 (상성 없음)
         return 1f;
     }
     void OpenShop()

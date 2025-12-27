@@ -26,14 +26,24 @@ public class ComboManager : MonoBehaviour
             {
                 isSameGroup = true;
             }
-            else if (itemManager != null && itemManager.hasResonance)
+            else
             {
-                bool lastInResonance = itemManager.IsElementInActiveResonance(lastAttackElement.Value);
-                bool currentInResonance = itemManager.IsElementInActiveResonance(element);
-
-                if (lastInResonance && currentInResonance)
+                // ★ Pure 전공 - 모든 속성을 체인으로 인식
+                MajorSystem majorSystem = FindObjectOfType<MajorSystem>();
+                if (majorSystem != null && majorSystem.HasMajor(MajorType.Pure))
                 {
-                    isSameGroup = itemManager.AreElementsInSameResonance(lastAttackElement.Value, element);
+                    isSameGroup = true;
+                }
+                // 기존 공명 체크
+                else if (itemManager != null && itemManager.hasResonance)
+                {
+                    bool lastInResonance = itemManager.IsElementInActiveResonance(lastAttackElement.Value);
+                    bool currentInResonance = itemManager.IsElementInActiveResonance(element);
+
+                    if (lastInResonance && currentInResonance)
+                    {
+                        isSameGroup = itemManager.AreElementsInSameResonance(lastAttackElement.Value, element);
+                    }
                 }
             }
         }

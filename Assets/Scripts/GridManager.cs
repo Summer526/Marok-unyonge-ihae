@@ -610,4 +610,102 @@ public class GridManager : MonoBehaviour
         ElementType elem = UIManager.Instance.CurrentElement;
         HighlightLongestChain(elem);
     }
+    /// <summary>
+    /// 고정되지 않은 타일만 섞기 (혼돈 주사위, 혼돈 전공)
+    /// </summary>
+    public void ShuffleUnpinnedTiles(PinSystem pinSystem)
+    {
+        if (pinSystem == null)
+        {
+            Debug.Log("PinSystem이 없어서 전체 보드 섞기");
+            ShuffleAllTiles();
+            return;
+        }
+
+        // 고정되지 않은 타일들의 속성만 섞기
+        List<Vector2Int> unpinnedPos = pinSystem.GetUnpinnedPositions();
+
+        if (unpinnedPos.Count <= 1)
+        {
+            Debug.Log("섞을 타일이 없습니다");
+            return;
+        }
+
+        // 고정되지 않은 타일들의 속성 수집
+        List<ElementType> unpinnedElements = new List<ElementType>();
+        foreach (var pos in unpinnedPos)
+        {
+            if (tiles[pos.x, pos.y] != null)
+            {
+                unpinnedElements.Add(tiles[pos.x, pos.y].elementType);
+            }
+        }
+
+        // 섞기
+        for (int i = unpinnedElements.Count - 1; i > 0; i--)
+        {
+            int j = Random.Range(0, i + 1);
+            ElementType temp = unpinnedElements[i];
+            unpinnedElements[i] = unpinnedElements[j];
+            unpinnedElements[j] = temp;
+        }
+
+        // 다시 배치
+        for (int i = 0; i < unpinnedPos.Count; i++)
+        {
+            Vector2Int pos = unpinnedPos[i];
+            if (tiles[pos.x, pos.y] != null && i < unpinnedElements.Count)
+            {
+                tiles[pos.x, pos.y].SetElement(unpinnedElements[i]);
+            }
+        }
+
+        Debug.Log($"{unpinnedPos.Count}개 타일 섞기 완료 (고정 타일 제외)");
+        UpdateHighlightForCurrentElement();
+    }
+
+    /// <summary>
+    /// 전체 보드 섞기 (고정핀 없을 때)
+    /// </summary>
+    void ShuffleAllTiles()
+    {
+        List<ElementType> allElements = new List<ElementType>();
+
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                if (tiles[x, y] != null)
+                {
+                    allElements.Add(tiles[x, y].elementType);
+                }
+            }
+        }
+
+        // 섞기
+        for (int i = allElements.Count - 1; i > 0; i--)
+        {
+            int j = Random.Range(0, i + 1);
+            ElementType temp = allElements[i];
+            allElements[i] = allElements[j];
+            allElements[j] = temp;
+        }
+
+        // 다시 배치
+        int index = 0;
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                if (tiles[x, y] != null && index < allElements.Count)
+                {
+                    tiles[x, y].SetElement(allElements[index]);
+                    index++;
+                }
+            }
+        }
+
+        Debug.Log("전체 보드 섞기 완료");
+        UpdateHighlightForCurrentElement();
+    }
 }

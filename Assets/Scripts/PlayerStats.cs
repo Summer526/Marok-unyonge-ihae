@@ -20,6 +20,12 @@ public class PlayerStats : MonoBehaviour
     public float hitFlashDuration = 0.2f;   // 피격 깜빡임 시간
     public float evadeFadeDuration = 0.3f;  // 회피 페이드 시간
 
+    [Header("무한모드 전용")]
+    public bool isFirstHitThisTurn = true; // 양날단검용
+
+    [Header("Passive Major Bonuses")]
+    public float waterSnowBonus = 0f; // Water_Snow 누적 공격력
+
     public void UpdateStatsForStage(int newStage)
     {
         stage = newStage;
@@ -35,24 +41,66 @@ public class PlayerStats : MonoBehaviour
 
     public float GetCurrentATK()
     {
-        return baseATK;
+        return baseATK + waterSnowBonus;
     }
 
     public void TakeDamage(float damage, bool hasLastStand)
     {
         if (damage <= 0f)
             return;
+
         lastStandTriggeredThisHit = false;
 
+        // 무한모드 - 망자의 동전 피해 증가
+        if (EndlessModeManager.Instance != null)
+        {
+            damage = EndlessModeManager.Instance.ApplyDeadCoinPenalty(damage);
+        }
+
+        // 전공 - Chaos 받는 피해 증가
+        MajorSystem majorSystem = FindObjectOfType<MajorSystem>();
+        if (majorSystem != null)
+        {
+            damage = majorSystem.ApplyChaosDamageTaken(damage);
+            damage = majorSystem.ApplyMagiTechDamageTaken(damage);
+        }
+
+        // 무한모드 - 양날단검 첫 피해 감소
+        if (EndlessModeManager.Instance != null)
+        {
+            damage = EndlessModeManager.Instance.ApplyDoubleBladeReduction(damage, ref isFirstHitThisTurn);
+        }
+
+        // 전공 - Wind_Gale 회피율 보너스
+        float evasionBonus = 0f;
+        if (majorSystem != null)
+        {
+            evasionBonus = majorSystem.GetWindGaleEvasionBonus();
+        }
+
         // 1) 회피 판정
-        if (Random.value < evadeChance)
+        if (Random.value < evadeChance + evasionBonus)
         {
             Debug.Log("플레이어 회피!");
             if (AudioManager.Instance != null)
                 AudioManager.Instance.PlaySE("MobAttackMiss");
-            // ★ 회피 이펙트 (투명도 낮추기)
-            StartCoroutine(EvadeEffect());
 
+            StartCoroutine(EvadeEffect());
+            return;
+        }
+
+        // 전공 - Dark_Death 플레이어 즉사 확률
+        if (majorSystem != null && majorSystem.TryDarkDeathInstantKill(false))
+        {
+            currentHP = 0f;
+            Debug.Log("Dark_Death: 플레이어 즉사!");
+
+            // ★ hud 변수 한 번만 선언
+            WorldUnitHUD hud = GetComponentInChildren<WorldUnitHUD>();
+            if (hud != null)
+            {
+                hud.UpdateUI();
+            }
             return;
         }
 
@@ -85,9 +133,7 @@ public class PlayerStats : MonoBehaviour
         {
             currentHP -= remaining;
             Debug.Log($"플레이어가 {remaining} 피해를 받음. HP: {currentHP:F1}/{maxHP:F1}");
-            // ★ 피격 이펙트 (빨갛게 깜빡이기)
             StartCoroutine(HitEffect());
-
         }
 
         // 4) 라스트 스탠드
@@ -102,11 +148,11 @@ public class PlayerStats : MonoBehaviour
         if (currentHP < 0f)
             currentHP = 0f;
 
-        // ★ UI 즉시 업데이트
-        WorldUnitHUD hud = GetComponentInChildren<WorldUnitHUD>();
-        if (hud != null)
+        // ★ UI 즉시 업데이트 - 기존 hud 재사용하지 않고 다시 찾기
+        WorldUnitHUD playerHUD = GetComponentInChildren<WorldUnitHUD>();
+        if (playerHUD != null)
         {
-            hud.UpdateUI();
+            playerHUD.UpdateUI();
         }
     }
     IEnumerator HitEffect()
@@ -179,6 +225,7 @@ public class PlayerStats : MonoBehaviour
         float healAmount = maxHP * 0.1f;
         Heal(healAmount);
         Debug.Log($"몹 처치 자동 회복: {healAmount}");
+        isFirstHitThisTurn = true;
     }
 
     public void AddShield(float amount)

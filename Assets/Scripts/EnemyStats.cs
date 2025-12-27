@@ -41,6 +41,11 @@ public class EnemyStats : MonoBehaviour
 
     public static Sprite[] availableSprites;
     public static ElementType[] availableElements;
+
+    [Header("Enemy State")]
+    public EnemyState currentState = EnemyState.Normal;
+    public int stunnedTurnsLeft = 0; 
+
     void Awake()
     {
         if (animator == null)
@@ -130,16 +135,57 @@ public class EnemyStats : MonoBehaviour
 
     public void AttackPlayer(PlayerStats player, bool hasLastStand)
     {
+        // 마비 상태면 공격 불가
+        if (currentState == EnemyState.Stunned && stunnedTurnsLeft > 0)
+        {
+            stunnedTurnsLeft--;
+            Debug.Log($"몹 마비 상태 ({stunnedTurnsLeft}턴 남음)");
+
+            if (stunnedTurnsLeft <= 0)
+            {
+                currentState = EnemyState.Normal;
+                Debug.Log("몹 마비 해제");
+            }
+
+            return;
+        }
+
         Debug.Log($"몹 공격: {atk} 데미지");
+
+        float finalAtk = atk;
+
+        // 무한모드 - 양날단검 적 공격력 +10%
+        if (EndlessModeManager.Instance != null && EndlessModeManager.Instance.hasDoubleBlade)
+        {
+            finalAtk *= 1.1f;
+        }
+
+        // 전공 - 결계 공격력 감소
+        MajorSystem majorSystem = FindObjectOfType<MajorSystem>();
+        if (majorSystem != null)
+        {
+            // chainCount는 GameManager에서 전달 필요 (임시로 0)
+            finalAtk = majorSystem.ApplyBarrierReduction(finalAtk, 0);
+        }
+
         if (animator != null)
             animator.SetTrigger(ANIM_ATTACK);
 
         if (AudioManager.Instance != null)
             AudioManager.Instance.PlaySE("MobAttack");
 
-        player.TakeDamage(atk, hasLastStand);
+        player.TakeDamage(finalAtk, hasLastStand);
     }
 
+    /// <summary>
+    /// 마비 상태로 만들기 (번개 전공)
+    /// </summary>
+    public void ApplyStun(int turns)
+    {
+        currentState = EnemyState.Stunned;
+        stunnedTurnsLeft = turns;
+        Debug.Log($"몹 마비 {turns}턴");
+    }
     public bool IsDead()
     {
         return currentHP <= 0;
