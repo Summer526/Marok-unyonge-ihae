@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dc118a9e99131e24e91ed70b3936c7fe, type: 3}
   m_Name: Orb-Light
   m_EditorClassIdentifier: 
-  icon: {fileID: 21300000, guid: d38812822fe672b48bcae87acb09c337, type: 3}
+  icon: {fileID: 5005976199060435069, guid: ae1341dd346ca5a4f9ea4a088199964b, type: 3}
   itemType: 1
   displayName: "\uBE5B\uC758 \uC624\uBE0C"
   description: "\uBE5B \uC18D\uC131 \uB9C8\uB098\uC758 \uB4F1\uC7A5 \uD655\uB960\uC774
@@ -20,4 +20,10 @@ MonoBehaviour:
   basePrice: 100
   primaryElement: 5
   secondaryElement: 0
+  isMajorBook: 0
+  isActiveMajor: 1
+  majorType: 0
+  passiveType: 0
   maxStack: 3
+  isActive: 0
+  isConsumable: 0

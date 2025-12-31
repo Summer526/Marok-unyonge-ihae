@@ -706,6 +706,19 @@ public class ItemManager : MonoBehaviour
             return 0.1f;
         }
 
+        // ★ Major 타일 확률
+        if (element == ElementType.Major)
+        {
+            // 무한모드이고 액티브 전공이 있으면 일반 전투 속성과 동일한 확률
+            GridManager gridMgr = FindObjectOfType<GridManager>();
+            if (gridMgr != null)
+            {
+                // 나머지 80%를 8개로 균등 분배 (Major 포함)
+                return 0.1f; // 10%
+            }
+            return 0f;
+        }
+
         // 세븐 오브 컬렉션 달성 시 균등 분배
         if (HasAllSevenOrbs())
         {

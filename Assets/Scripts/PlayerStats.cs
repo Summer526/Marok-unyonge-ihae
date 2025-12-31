@@ -57,12 +57,16 @@ public class PlayerStats : MonoBehaviour
             damage = EndlessModeManager.Instance.ApplyDeadCoinPenalty(damage);
         }
 
-        // 전공 - Chaos 받는 피해 증가
-        MajorSystem majorSystem = FindObjectOfType<MajorSystem>();
-        if (majorSystem != null)
+        // ★ 무한모드 - 전공 받는 피해 증가
+        GameManager gm = GameManager.Instance;
+        if (gm != null && gm.currentGameMode == GameMode.Endless)
         {
-            damage = majorSystem.ApplyChaosDamageTaken(damage);
-            damage = majorSystem.ApplyMagiTechDamageTaken(damage);
+            MajorSystem majorSystem = FindObjectOfType<MajorSystem>();
+            if (majorSystem != null)
+            {
+                damage = majorSystem.ApplyChaosDamageTaken(damage);
+                damage = majorSystem.ApplyMagiTechDamageTaken(damage);
+            }
         }
 
         // 무한모드 - 양날단검 첫 피해 감소
@@ -71,11 +75,15 @@ public class PlayerStats : MonoBehaviour
             damage = EndlessModeManager.Instance.ApplyDoubleBladeReduction(damage, ref isFirstHitThisTurn);
         }
 
-        // 전공 - Wind_Gale 회피율 보너스
+        // ★ 무한모드 - Wind_Gale 회피율 보너스
         float evasionBonus = 0f;
-        if (majorSystem != null)
+        if (gm != null && gm.currentGameMode == GameMode.Endless)
         {
-            evasionBonus = majorSystem.GetWindGaleEvasionBonus();
+            MajorSystem majorSystem = FindObjectOfType<MajorSystem>();
+            if (majorSystem != null)
+            {
+                evasionBonus = majorSystem.GetWindGaleEvasionBonus();
+            }
         }
 
         // 1) 회피 판정
@@ -89,19 +97,22 @@ public class PlayerStats : MonoBehaviour
             return;
         }
 
-        // 전공 - Dark_Death 플레이어 즉사 확률
-        if (majorSystem != null && majorSystem.TryDarkDeathInstantKill(false))
+        // ★ 무한모드 - Dark_Death 플레이어 즉사 확률
+        if (gm != null && gm.currentGameMode == GameMode.Endless)
         {
-            currentHP = 0f;
-            Debug.Log("Dark_Death: 플레이어 즉사!");
-
-            // ★ hud 변수 한 번만 선언
-            WorldUnitHUD hud = GetComponentInChildren<WorldUnitHUD>();
-            if (hud != null)
+            MajorSystem majorSystem = FindObjectOfType<MajorSystem>();
+            if (majorSystem != null && majorSystem.TryDarkDeathInstantKill(false))
             {
-                hud.UpdateUI();
+                currentHP = 0f;
+                Debug.Log("Dark_Death: 플레이어 즉사!");
+
+                WorldUnitHUD hud = GetComponentInChildren<WorldUnitHUD>();
+                if (hud != null)
+                {
+                    hud.UpdateUI();
+                }
+                return;
             }
-            return;
         }
 
         float remaining = damage;
@@ -143,12 +154,17 @@ public class PlayerStats : MonoBehaviour
             currentHP = maxHP * 0.3f;
             lastStandTriggeredThisHit = true;
             Debug.Log($"라스트 스탠드 발동! HP {currentHP:F1}/{maxHP:F1}로 부활");
+
+            if (gm != null)
+            {
+                gm.PlayReviveEffect();
+            }
         }
 
         if (currentHP < 0f)
             currentHP = 0f;
 
-        // ★ UI 즉시 업데이트 - 기존 hud 재사용하지 않고 다시 찾기
+        // UI 즉시 업데이트
         WorldUnitHUD playerHUD = GetComponentInChildren<WorldUnitHUD>();
         if (playerHUD != null)
         {

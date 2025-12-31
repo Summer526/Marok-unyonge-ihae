@@ -79,6 +79,10 @@ public class GameManager : MonoBehaviour
     public EndlessModeManager endlessModeManager;
     public MajorSystem majorSystem;
     public PinSystem pinSystem;
+
+    [Header("Effects")]
+    public GameObject reviveEffectPrefab;   // 부활 이펙트
+    public GameObject attackEffectPrefab;   // 공격 이펙트
     void Awake()
     {
         if (Instance == null)
@@ -316,8 +320,7 @@ public class GameManager : MonoBehaviour
             }
             gridManager.ResetSwapCount();
 
-            // ★ Rune 페널티 체크
-            if (majorSystem != null)
+            if (currentGameMode == GameMode.Endless && majorSystem != null)
             {
                 majorSystem.CheckRunePenalty(0, player);
             }
@@ -351,8 +354,8 @@ public class GameManager : MonoBehaviour
             chainCount = itemManager.GetEffectiveChainCount(chainCount);
         }
 
-        // ★ Rune 체인 추가
-        if (majorSystem != null)
+        // ★ 무한모드 - Rune 체인 추가
+        if (currentGameMode == GameMode.Endless && majorSystem != null)
         {
             chainCount = majorSystem.ApplyRuneChainBonus(chainCount);
         }
@@ -366,8 +369,8 @@ public class GameManager : MonoBehaviour
 
         float chainMult = GetChainMultiplier(chainCount);
 
-        // ★ Pure 전공 - 체인 계수 조정
-        if (majorSystem != null)
+        // ★ 무한모드 - Pure 전공 체인 계수 조정
+        if (currentGameMode == GameMode.Endless && majorSystem != null)
         {
             chainMult = majorSystem.ApplyPureChainMultiplier(chainMult);
         }
@@ -375,16 +378,16 @@ public class GameManager : MonoBehaviour
         ElementType enemyElement = currentEnemy.elementType;
         float affinityMult = GetElementAffinity(element, enemyElement);
 
-        // ★ Dragon 전공 - 상성 배수 증가
-        if (majorSystem != null)
+        // ★ 무한모드 - Dragon 전공 상성 배수 증가
+        if (currentGameMode == GameMode.Endless && majorSystem != null)
         {
             affinityMult = majorSystem.ApplyDragonAffinityBonus(affinityMult);
         }
 
         float damage = baseAtk * chainMult * comboMult * affinityMult;
 
-        // ★ Fire_Explosion 페시브
-        if (majorSystem != null)
+        // ★ 무한모드 - Fire_Explosion 페시브
+        if (currentGameMode == GameMode.Endless && majorSystem != null)
         {
             float explosionDamage;
             if (majorSystem.TryFireExplosion(out explosionDamage))
@@ -406,14 +409,14 @@ public class GameManager : MonoBehaviour
             damage = endlessModeManager.ApplyBlackContractBonus(damage);
         }
 
-        // 전공 시스템 - 데미지 보정
-        if (majorSystem != null)
+        // ★ 무한모드 - 전공 시스템 데미지 보정
+        if (currentGameMode == GameMode.Endless && majorSystem != null)
         {
             damage = majorSystem.ApplyDamageModifier(damage, chainCount);
         }
 
-        // ★ Barrier 전공 - 내 데미지 감소
-        if (majorSystem != null)
+        // ★ 무한모드 - Barrier 전공 내 데미지 감소
+        if (currentGameMode == GameMode.Endless && majorSystem != null)
         {
             damage = majorSystem.ApplyBarrierDamagePenalty(damage);
         }
@@ -422,23 +425,23 @@ public class GameManager : MonoBehaviour
             $"공격: 공격속성={element}, 적속성={enemyElement}, 체인={chainCount}, 콤보배수={comboMult:F2}, 상성배수={affinityMult:F2}, 최종데미지={damage:F1}"
         );
 
-        // ★ Dark_Death 몹 즉사 확률
+        // ★ 무한모드 - Dark_Death 몹 즉사 확률
         bool instantKill = false;
-        if (majorSystem != null && majorSystem.TryDarkDeathInstantKill(true))
+        if (currentGameMode == GameMode.Endless && majorSystem != null && majorSystem.TryDarkDeathInstantKill(true))
         {
             instantKill = true;
             currentEnemy.currentHP = 0f;
             Debug.Log("Dark_Death: 몹 즉사!");
         }
 
-        // ★ Lightning_Bolt 마비
-        if (majorSystem != null)
+        // ★ 무한모드 - Lightning_Bolt 마비
+        if (currentGameMode == GameMode.Endless && majorSystem != null)
         {
             majorSystem.TryLightningStun(currentEnemy);
         }
 
-        // ★ Light_Holy 회복
-        if (majorSystem != null)
+        // ★ 무한모드 - Light_Holy 회복
+        if (currentGameMode == GameMode.Endless && majorSystem != null)
         {
             majorSystem.TryLightHolyHeal(damage, player);
         }
@@ -458,8 +461,8 @@ public class GameManager : MonoBehaviour
         gridManager.FillEmptyTiles();
         gridManager.ResetSwapCount();
 
-        // ★ Rune 체인 저장
-        if (majorSystem != null)
+        // ★ 무한모드 - Rune 체인 저장
+        if (currentGameMode == GameMode.Endless && majorSystem != null)
         {
             majorSystem.SaveRuneChain(chainCount);
         }
@@ -467,6 +470,7 @@ public class GameManager : MonoBehaviour
         UpdateAllUI();
         StartCoroutine(DelayedEndPlayerTurn(PlayerActionType.Attack, damage, 0f, instantKill));
     }
+
     IEnumerator DelayedEndPlayerTurn(PlayerActionType actionType, float damage, float heal, bool instantKill = false)
     {
         yield return new WaitForSeconds(actionDelay);
@@ -655,6 +659,8 @@ public class GameManager : MonoBehaviour
 
         if (actionType == PlayerActionType.Attack)
         {
+            PlayAttackEffect();
+
             currentEnemy.TakeDamage(damage);
             Debug.Log($"몹에게 {damage} 데미지!");
             UpdateAllUI();
@@ -1040,6 +1046,21 @@ public class GameManager : MonoBehaviour
             {
                 stageBackgrounds[i].SetActive(i == bgIndex);
             }
+        }
+    }
+    public void PlayReviveEffect()
+    {
+        if (reviveEffectPrefab != null && playerSpawnPoint != null)
+        {
+            Instantiate(reviveEffectPrefab, playerSpawnPoint.position, Quaternion.identity);
+        }
+    }
+
+    public void PlayAttackEffect()
+    {
+        if (attackEffectPrefab != null && enemySpawnPoint != null)
+        {
+            Instantiate(attackEffectPrefab, enemySpawnPoint.position, Quaternion.identity);
         }
     }
 }

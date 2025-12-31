@@ -223,7 +223,10 @@ public class EndlessModeManager : MonoBehaviour
         player.currentHP = player.maxHP * 0.2f; // 20% HP로 부활
 
         Debug.Log($"도마뱀 꼬리 발동! 최대 HP 감소, {player.currentHP:F1} HP로 부활 (남은 꼬리: {lizardTailCount}개)");
-
+        if (gameManager != null)
+        {
+            gameManager.PlayReviveEffect();
+        }
         return true;
     }
 

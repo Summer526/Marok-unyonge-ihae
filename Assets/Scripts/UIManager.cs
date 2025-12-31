@@ -46,6 +46,7 @@ public class UIManager : MonoBehaviour
     public Button btnSettings;        // 메인메뉴 – 설정
     public Button btnQuit;            // 메인메뉴 – 나가기
     public Button btnCloseHowToPlay;
+    public Button btnEndlessMode;
 
     [Header("Shop UI")]
     public Button btnRerollShop;
@@ -170,6 +171,47 @@ public class UIManager : MonoBehaviour
     public Button btnSettingsQuit;  
     public Button btnSettingsClose;
     private int lastBGMStage = -1;
+
+    [Header("Endless Mode Panels")]
+    public GameObject panelEndlessStory;
+    public GameObject panelEndlessStartChose;
+    public GameObject panelEndlessChose;
+    public GameObject panelEndlessGameOver;
+    public GameObject panelEndlessHowToPlay;
+
+    [Header("Endless Story")]
+    public Button btnCloseEndlessStory;
+
+    [Header("Endless Start Chose (첫 전공 선택)")]
+    public MajorSlotUI[] endlessStartMajorSlots; // 6개
+
+    [System.Serializable]
+    public class MajorSlotUI
+    {
+        public GameObject slotRoot;
+        public Image imgIcon;
+        public TMP_Text txtName;
+        public TMP_Text txtDescription;
+        public Button btnSelect;
+    }
+
+    [Header("Endless Chose (50층 전공 선택)")]
+    public MajorSlotUI[] endlessMajorSlots; // 3개
+    public Button btnSkipMajorSelection;
+
+    [Header("Endless Game Over")]
+    public TMP_Text txtEndlessStage;
+    public TMP_Text txtEndlessGrade;
+    public Button btnEndlessRetry;
+    public Button btnEndlessReturnToMain;
+
+    [Header("Endless HowToPlay")]
+    public GameObject[] endlessHowToPlayPages;
+    public Button btnEndlessHowToPlayPrev;
+    public Button btnEndlessHowToPlayNext;
+    public Button btnEndlessHowToPlayClose;
+    private int currentEndlessHowToPlayPage = 0;
+
     private void Awake()
     {
         if (Instance == null)
@@ -283,9 +325,16 @@ public class UIManager : MonoBehaviour
         {
             OnClickCloseStory();
         }
+        else if (panelEndlessHowToPlay != null && panelEndlessHowToPlay.activeSelf)
+        {
+            OnClickCloseEndlessHowToPlay();
+        }
+        else if (panelEndlessChose != null && panelEndlessChose.activeSelf)
+        {
+            OnClickSkipMajorSelection();
+        }
         else if (panelInGame != null && panelInGame.activeSelf)
         {
-            // 인게임에서는 설정 열기
             OnClickOpenSettingsInGame();
         }
     }
@@ -407,6 +456,438 @@ public class UIManager : MonoBehaviour
             btnUseItem.onClick.AddListener(OnClickUseItem);
             btnUseItem.gameObject.SetActive(false);  // 초기에는 비활성화
         }
+        // ★ 무한모드 시작 버튼
+        if (btnEndlessMode != null)
+        {
+            btnEndlessMode.onClick.RemoveAllListeners();
+            btnEndlessMode.onClick.AddListener(OnClickStartEndlessMode);
+        }
+        // ★ 무한모드 스토리
+        if (btnCloseEndlessStory != null)
+        {
+            btnCloseEndlessStory.onClick.RemoveAllListeners();
+            btnCloseEndlessStory.onClick.AddListener(OnClickCloseEndlessStory);
+        }
+
+        // ★ 무한모드 50층 전공 선택 - 무시하기
+        if (btnSkipMajorSelection != null)
+        {
+            btnSkipMajorSelection.onClick.RemoveAllListeners();
+            btnSkipMajorSelection.onClick.AddListener(OnClickSkipMajorSelection);
+        }
+
+        // ★ 무한모드 게임오버
+        if (btnEndlessRetry != null)
+        {
+            btnEndlessRetry.onClick.RemoveAllListeners();
+            btnEndlessRetry.onClick.AddListener(OnClickEndlessRetry);
+        }
+
+        if (btnEndlessReturnToMain != null)
+        {
+            btnEndlessReturnToMain.onClick.RemoveAllListeners();
+            btnEndlessReturnToMain.onClick.AddListener(OnClickEndlessReturnToMain);
+        }
+
+        // ★ 무한모드 설명서
+        if (btnEndlessHowToPlayPrev != null)
+        {
+            btnEndlessHowToPlayPrev.onClick.RemoveAllListeners();
+            btnEndlessHowToPlayPrev.onClick.AddListener(OnClickEndlessHowToPlayPrev);
+        }
+
+        if (btnEndlessHowToPlayNext != null)
+        {
+            btnEndlessHowToPlayNext.onClick.RemoveAllListeners();
+            btnEndlessHowToPlayNext.onClick.AddListener(OnClickEndlessHowToPlayNext);
+        }
+
+        if (btnEndlessHowToPlayClose != null)
+        {
+            btnEndlessHowToPlayClose.onClick.RemoveAllListeners();
+            btnEndlessHowToPlayClose.onClick.AddListener(OnClickCloseEndlessHowToPlay);
+        }
+    }
+    public void OnClickStartEndlessMode()
+    {
+        PlayButtonSE();
+
+        if (gameManager == null) return;
+
+        // 무한모드로 설정
+        gameManager.currentGameMode = GameMode.Endless;
+
+        // TODO: 무한모드 시작 전 전공 선택 패널 열기
+        // ShowEndlessStartChosePanel();
+
+        // 임시로 바로 시작
+        gameManager.InitGame();
+    }
+    public void ShowEndlessStoryPanel()
+    {
+        if (panelEndlessStory != null)
+            panelEndlessStory.SetActive(true);
+    }
+
+    public void OnClickCloseEndlessStory()
+    {
+        PlayButtonSE();
+
+        if (panelEndlessStory != null)
+            panelEndlessStory.SetActive(false);
+
+        // 첫 전공 선택 패널 열기
+        ShowEndlessStartChosePanel();
+    }
+    public void ShowEndlessStartChosePanel()
+    {
+        if (panelEndlessStartChose == null) return;
+
+        panelEndlessStartChose.SetActive(true);
+
+        MajorSystem majorSystem = FindObjectOfType<MajorSystem>();
+        if (majorSystem == null) return;
+
+        // 13개 중 랜덤 6개 선택
+        var randomMajors = majorSystem.GetRandomMajors(6);
+
+        // 슬롯 UI 업데이트
+        for (int i = 0; i < endlessStartMajorSlots.Length; i++)
+        {
+            var slot = endlessStartMajorSlots[i];
+            if (slot == null || slot.slotRoot == null) continue;
+
+            if (i < randomMajors.Count)
+            {
+                var majorData = randomMajors[i];
+                slot.slotRoot.SetActive(true);
+
+                // ★ 아이콘만 표시
+                if (slot.imgIcon != null)
+                {
+                    // TODO: 전공별 아이콘 설정
+                    slot.imgIcon.enabled = true;
+                }
+
+                // ★ 이름/설명 숨기기
+                if (slot.txtName != null)
+                {
+                    slot.txtName.gameObject.SetActive(false);
+                }
+
+                if (slot.txtDescription != null)
+                {
+                    slot.txtDescription.gameObject.SetActive(false);
+                }
+
+                // 버튼 콜백
+                if (slot.btnSelect != null)
+                {
+                    slot.btnSelect.onClick.RemoveAllListeners();
+                    var data = majorData;
+                    slot.btnSelect.onClick.AddListener(() => OnClickSelectStartMajor(data));
+                }
+            }
+            else
+            {
+                slot.slotRoot.SetActive(false);
+            }
+        }
+    }
+
+    void OnClickSelectStartMajor(MajorSystem.MajorData majorData)
+    {
+        PlayButtonSE();
+
+        MajorSystem majorSystem = FindObjectOfType<MajorSystem>();
+        if (majorSystem == null) return;
+
+        // 전공 선택
+        majorSystem.SelectMajor(1, majorData.isActive, majorData.majorType, majorData.passiveType);
+
+        // 패널 닫기
+        if (panelEndlessStartChose != null)
+            panelEndlessStartChose.SetActive(false);
+
+        // 게임 시작
+        if (gameManager != null)
+        {
+            gameManager.currentGameMode = GameMode.Endless;
+            gameManager.InitGame();
+        }
+    }
+    public void ShowEndlessChosePanel()
+    {
+        if (panelEndlessChose == null) return;
+
+        panelEndlessChose.SetActive(true);
+
+        MajorSystem majorSystem = FindObjectOfType<MajorSystem>();
+        if (majorSystem == null) return;
+
+        // 13개 중 랜덤 3개 선택
+        var randomMajors = majorSystem.GetRandomMajors(3);
+
+        // 슬롯 UI 업데이트
+        for (int i = 0; i < endlessMajorSlots.Length; i++)
+        {
+            var slot = endlessMajorSlots[i];
+            if (slot == null || slot.slotRoot == null) continue;
+
+            if (i < randomMajors.Count)
+            {
+                var majorData = randomMajors[i];
+                slot.slotRoot.SetActive(true);
+
+                // ★ 아이콘 표시
+                if (slot.imgIcon != null)
+                {
+                    // TODO: 전공별 아이콘 설정
+                    slot.imgIcon.enabled = true;
+                }
+
+                // ★ 이름 표시
+                if (slot.txtName != null)
+                {
+                    slot.txtName.gameObject.SetActive(true);
+                    slot.txtName.text = majorData.isActive ?
+                        GetMajorName(majorData.majorType) :
+                        GetPassiveName(majorData.passiveType);
+                }
+
+                // ★ 설명 표시
+                if (slot.txtDescription != null)
+                {
+                    slot.txtDescription.gameObject.SetActive(true);
+                    slot.txtDescription.text = majorData.isActive ?
+                        GetMajorDescription(majorData.majorType) :
+                        GetPassiveDescription(majorData.passiveType);
+                }
+
+                // 버튼 콜백
+                if (slot.btnSelect != null)
+                {
+                    slot.btnSelect.onClick.RemoveAllListeners();
+                    var data = majorData;
+                    slot.btnSelect.onClick.AddListener(() => OnClickSelectMajor(data));
+                }
+            }
+            else
+            {
+                slot.slotRoot.SetActive(false);
+            }
+        }
+    }
+
+    void OnClickSelectMajor(MajorSystem.MajorData majorData)
+    {
+        PlayButtonSE();
+
+        MajorSystem majorSystem = FindObjectOfType<MajorSystem>();
+        if (majorSystem == null) return;
+
+        // 전공 선택 (액티브는 슬롯1 교체, 페시브는 슬롯2 교체)
+        int slotIndex = majorData.isActive ? 1 : 2;
+        majorSystem.SelectMajor(slotIndex, majorData.isActive, majorData.majorType, majorData.passiveType);
+
+        // 패널 닫기
+        if (panelEndlessChose != null)
+            panelEndlessChose.SetActive(false);
+
+        // 게임 계속
+        if (gameManager != null)
+        {
+            gameManager.StartPlayerTurn();
+        }
+    }
+
+    public void OnClickSkipMajorSelection()
+    {
+        PlayButtonSE();
+
+        Debug.Log("전공 선택 무시");
+
+        if (panelEndlessChose != null)
+            panelEndlessChose.SetActive(false);
+
+        // 게임 계속
+        if (gameManager != null)
+        {
+            gameManager.StartPlayerTurn();
+        }
+    }
+    public void ShowEndlessGameOverPanel(int stage, string grade)
+    {
+        SetAllPanelsOff();
+
+        if (panelEndlessGameOver != null)
+            panelEndlessGameOver.SetActive(true);
+
+        if (txtEndlessStage != null)
+            txtEndlessStage.text = $"{stage}층";
+
+        if (txtEndlessGrade != null)
+            txtEndlessGrade.text = grade;
+
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.PlayBGM("BGM_GameOver");
+    }
+
+    public void OnClickEndlessRetry()
+    {
+        PlayButtonSE();
+
+        if (gameManager == null) return;
+
+        gameManager.currentGameMode = GameMode.Endless;
+
+        // 스토리 패널부터 다시 시작
+        SetAllPanelsOff();
+        ShowEndlessStoryPanel();
+    }
+
+    public void OnClickEndlessReturnToMain()
+    {
+        PlayButtonSE();
+
+        ShowMainMenuPanel();
+    }
+    public void ShowEndlessHowToPlayPanel()
+    {
+        if (panelEndlessHowToPlay == null) return;
+
+        panelEndlessHowToPlay.SetActive(true);
+        currentEndlessHowToPlayPage = 0;
+        UpdateEndlessHowToPlayPages();
+    }
+
+    void UpdateEndlessHowToPlayPages()
+    {
+        if (endlessHowToPlayPages == null) return;
+
+        // 모든 페이지 비활성화
+        for (int i = 0; i < endlessHowToPlayPages.Length; i++)
+        {
+            if (endlessHowToPlayPages[i] != null)
+            {
+                endlessHowToPlayPages[i].SetActive(i == currentEndlessHowToPlayPage);
+            }
+        }
+
+        // 버튼 활성화 상태
+        if (btnEndlessHowToPlayPrev != null)
+        {
+            btnEndlessHowToPlayPrev.interactable = (currentEndlessHowToPlayPage > 0);
+        }
+
+        if (btnEndlessHowToPlayNext != null)
+        {
+            btnEndlessHowToPlayNext.interactable = (currentEndlessHowToPlayPage < endlessHowToPlayPages.Length - 1);
+        }
+    }
+
+    public void OnClickEndlessHowToPlayNext()
+    {
+        PlayButtonSE();
+
+        if (currentEndlessHowToPlayPage < endlessHowToPlayPages.Length - 1)
+        {
+            currentEndlessHowToPlayPage++;
+            UpdateEndlessHowToPlayPages();
+        }
+    }
+
+    public void OnClickEndlessHowToPlayPrev()
+    {
+        PlayButtonSE();
+
+        if (currentEndlessHowToPlayPage > 0)
+        {
+            currentEndlessHowToPlayPage--;
+            UpdateEndlessHowToPlayPages();
+        }
+    }
+
+    public void OnClickCloseEndlessHowToPlay()
+    {
+        PlayButtonSE();
+
+        if (panelEndlessHowToPlay != null)
+        {
+            panelEndlessHowToPlay.SetActive(false);
+        }
+    }
+    string GetMajorName(MajorType type)
+    {
+        switch (type)
+        {
+            case MajorType.Chaos: return "혼돈";
+            case MajorType.Pure: return "무속성";
+            case MajorType.Rune: return "룬";
+            case MajorType.Dragon: return "용";
+            case MajorType.MagiTech: return "마도공학";
+            case MajorType.Barrier: return "결계";
+            default: return "없음";
+        }
+    }
+
+    string GetPassiveName(PassiveType type)
+    {
+        switch (type)
+        {
+            case PassiveType.Fire_Explosion: return "불-폭발";
+            case PassiveType.Water_Snow: return "물-눈";
+            case PassiveType.Lightning_Bolt: return "전기-번개";
+            case PassiveType.Wind_Gale: return "바람-질풍";
+            case PassiveType.Earth_Crystal: return "땅-크리스탈";
+            case PassiveType.Dark_Death: return "어둠-흑";
+            case PassiveType.Light_Holy: return "빛-성";
+            default: return "없음";
+        }
+    }
+
+    string GetMajorDescription(MajorType type)
+    {
+        switch (type)
+        {
+            case MajorType.Chaos:
+                return "빛과 어둠을 동시에 판정. 매 턴 보드 섞기. 받는 피해 +25% (레벨당 -3%)";
+            case MajorType.Pure:
+                return "모든 속성을 체인으로 인식. 체인 계수 ×0.8 (레벨당 +0.03)";
+            case MajorType.Rune:
+                return "다음 턴에 이전 체인 추가. 체인 0이면 HP 감소 (레벨당 완화)";
+            case MajorType.Dragon:
+                return "상성 배수 1.5배. 상점 가격 +15% (레벨당 -3%)";
+            case MajorType.MagiTech:
+                return "보드 최다 속성 개수만큼 추가 데미지. 받는 피해 +15% (레벨당 -3%)";
+            case MajorType.Barrier:
+                return "체인 수만큼 몹 공격력 감소. 내 데미지 -20% (레벨당 +3%)";
+            default:
+                return "";
+        }
+    }
+
+    string GetPassiveDescription(PassiveType type)
+    {
+        switch (type)
+        {
+            case PassiveType.Fire_Explosion:
+                return "20% 확률로 +10 데미지 (레벨당 확률+3%, 데미지+1)";
+            case PassiveType.Water_Snow:
+                return "원킬 시 공격력 +0.5 누적 (레벨당 최대치+1)";
+            case PassiveType.Lightning_Bolt:
+                return "20% 확률로 몹 마비 1턴 (레벨당 +3%)";
+            case PassiveType.Wind_Gale:
+                return "회피율 +10% (레벨당 +1%)";
+            case PassiveType.Earth_Crystal:
+                return "(체인-3)만큼 골드 증가 (레벨당 +1)";
+            case PassiveType.Dark_Death:
+                return "몹 1% 즉사, 플레이어 0.1% 즉사 (레벨당 각각 +0.5%, +0.05%)";
+            case PassiveType.Light_Holy:
+                return "10% 확률로 데미지 절반 회복 (레벨당 +3%)";
+            default:
+                return "";
+        }
     }
     // =========================
     // BGM 헬퍼
@@ -445,6 +926,13 @@ public class UIManager : MonoBehaviour
         if (panelShop) panelShop.SetActive(false);
         if (panelHowToPlay) panelHowToPlay.SetActive(false);
         if (panelStory) panelStory.SetActive(false);
+
+        // ★ 무한모드 패널들
+        if (panelEndlessStory) panelEndlessStory.SetActive(false);
+        if (panelEndlessStartChose) panelEndlessStartChose.SetActive(false);
+        if (panelEndlessChose) panelEndlessChose.SetActive(false);
+        if (panelEndlessGameOver) panelEndlessGameOver.SetActive(false);
+        if (panelEndlessHowToPlay) panelEndlessHowToPlay.SetActive(false);
     }
     public void ShowStoryPanel()
     {
@@ -462,6 +950,21 @@ public class UIManager : MonoBehaviour
     {
         SetAllPanelsOff();
         if (panelMainMenu) panelMainMenu.SetActive(true);
+
+        // ★ 무한모드 버튼 활성화 체크
+        if (btnEndlessMode != null)
+        {
+            bool unlocked = PlayerPrefs.GetInt("EndlessModeUnlocked", 0) == 1;
+            btnEndlessMode.interactable = unlocked;
+
+            if (!unlocked)
+            {
+                // 비활성화 시 색상 어둡게
+                var colors = btnEndlessMode.colors;
+                colors.disabledColor = new Color(0.5f, 0.5f, 0.5f, 0.5f);
+                btnEndlessMode.colors = colors;
+            }
+        }
 
         // 메인 메뉴 BGM
         if (AudioManager.Instance != null)

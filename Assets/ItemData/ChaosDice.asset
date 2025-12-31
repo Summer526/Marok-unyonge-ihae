@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc118a9e99131e24e91ed70b3936c7fe, type: 3}
+  m_Name: ChaosDice
+  m_EditorClassIdentifier: 
+  icon: {fileID: 7561543254680636340, guid: d5c0323d8f4366a439def588c84da345, type: 3}
+  itemType: 15
+  displayName: "\uD63C\uB3C8 \uC8FC\uC0AC\uC704"
+  description: "20% \uD655\uB960\uB85C \uBAA8\uB4E0 \uCE78 \uB79C\uB364\uC73C\uB85C
+    \uB3CC\uC544\uAC04\uB2E4.\r\n\uAE30\uBCF8 \uACF5\uACA9\uB825\uC774 \uC62C\uB77C\uAC04\uB2E4.\r"
+  basePrice: 500
+  primaryElement: 0
+  secondaryElement: 0
+  isMajorBook: 0
+  isActiveMajor: 1
+  majorType: 0
+  passiveType: 0
+  maxStack: 1
+  isActive: 0
+  isConsumable: 0

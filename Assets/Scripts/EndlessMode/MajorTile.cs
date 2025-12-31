@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 
 /// <summary>
-/// 액티브 전공 타일 - 전공 타입에 따라 비주얼 변경
+/// 액티브 전공 타일 - MajorSystem의 현재 전공을 자동 추적
 /// </summary>
 public class MajorTile : MonoBehaviour
 {
@@ -20,46 +20,63 @@ public class MajorTile : MonoBehaviour
     public MajorVisualData[] visualData;
 
     private MajorType currentType = MajorType.None;
+    private MajorSystem majorSystem;
 
-    void Awake()
+    void Start()
     {
         if (spriteRenderer == null)
             spriteRenderer = GetComponent<SpriteRenderer>();
+
+        majorSystem = FindObjectOfType<MajorSystem>();
+
+        // 초기 비주얼 설정
+        UpdateVisual();
+    }
+
+    void Update()
+    {
+        // ★ 매 프레임 전공 변경 체크
+        if (majorSystem != null)
+        {
+            MajorType activeMajor = majorSystem.GetCurrentActiveMajor();
+
+            if (activeMajor != currentType)
+            {
+                currentType = activeMajor;
+                UpdateVisual();
+            }
+        }
     }
 
     /// <summary>
-    /// 전공 타입에 따라 비주얼 변경
+    /// 현재 전공에 맞춰 비주얼 업데이트
     /// </summary>
-    public void SetMajorType(MajorType majorType)
+    void UpdateVisual()
     {
-        if (currentType == majorType)
+        if (currentType == MajorType.None)
+        {
+            // 전공 없으면 기본 회색
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.color = new Color(0.5f, 0.5f, 0.5f);
+            }
             return;
-
-        currentType = majorType;
+        }
 
         // 해당 타입의 비주얼 찾기
         foreach (var data in visualData)
         {
-            if (data.majorType == majorType)
+            if (data.majorType == currentType)
             {
                 if (spriteRenderer != null)
                 {
                     spriteRenderer.sprite = data.sprite;
                     spriteRenderer.color = data.color;
                 }
-                Debug.Log($"MajorTile 타입 변경: {majorType}");
                 return;
             }
         }
 
-        Debug.LogWarning($"MajorType {majorType}에 대한 비주얼 데이터가 없습니다!");
-    }
-
-    /// <summary>
-    /// 현재 타일 타입 반환
-    /// </summary>
-    public MajorType GetCurrentType()
-    {
-        return currentType;
+        Debug.LogWarning($"MajorType {currentType}에 대한 비주얼 데이터가 없습니다!");
     }
 }

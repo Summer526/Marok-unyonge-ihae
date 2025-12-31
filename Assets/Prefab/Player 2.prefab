@@ -3623,6 +3623,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 4105362945620786469, guid: ebea5f8b8163f9a4ab9d9a1b45444e28, type: 3}
       insertIndex: -1
       addedObject: {fileID: 7786171974974369726}
+    - targetCorrespondingSourceObject: {fileID: 4105362945620786469, guid: ebea5f8b8163f9a4ab9d9a1b45444e28, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2699573499690625629}
   m_SourcePrefab: {fileID: 100100000, guid: ebea5f8b8163f9a4ab9d9a1b45444e28, type: 3}
 --- !u!4 &199384777837709383 stripped
 Transform:
@@ -3746,6 +3749,29 @@ MonoBehaviour:
   spriteRenderers: []
   hitFlashDuration: 0.2
   evadeFadeDuration: 0.3
+  isFirstHitThisTurn: 1
+  waterSnowBonus: 0
+--- !u!114 &2699573499690625629
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 756930988302786811}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cb960289a1801cb4b8c38e21e973bbe0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerMagicCircle
+  spriteRenderer: {fileID: 2371028628974610303}
+  explosionColor: {r: 0.7830189, g: 0, b: 0.034157235, a: 1}
+  snowColor: {r: 0.9103774, g: 0.96400976, b: 1, a: 1}
+  lightningColor: {r: 1, g: 0.90511477, b: 0, a: 1}
+  stormColor: {r: 0.6, g: 1, b: 0.6, a: 1}
+  crystalColor: {r: 0.8207547, g: 0.41037732, b: 0, a: 1}
+  darkColor: {r: 0.4218327, g: 0, b: 0.4339623, a: 1}
+  holyColor: {r: 1, g: 1, b: 0.8, a: 1}
+  defaultColor: {r: 0, g: 0, b: 0, a: 1}
 --- !u!4 &1549538389195595238 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2880357165289652280, guid: ebea5f8b8163f9a4ab9d9a1b45444e28, type: 3}

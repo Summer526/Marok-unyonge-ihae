@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dc118a9e99131e24e91ed70b3936c7fe, type: 3}
   m_Name: Orb-Dark
   m_EditorClassIdentifier: 
-  icon: {fileID: 21300000, guid: 8c76c468807d737499829c8efa135977, type: 3}
+  icon: {fileID: -3137068879431473196, guid: 545c4489a03f18c439a7f3b3f849216d, type: 3}
   itemType: 1
   displayName: "\uC5B4\uB460\uC758 \uC624\uBE0C"
   description: "\uC5B4\uB460 \uC18D\uC131 \uB9C8\uB098\uC758 \uB4F1\uC7A5 \uD655\uB960\uC774
@@ -20,4 +20,10 @@ MonoBehaviour:
   basePrice: 100
   primaryElement: 6
   secondaryElement: 0
+  isMajorBook: 0
+  isActiveMajor: 1
+  majorType: 0
+  passiveType: 0
   maxStack: 3
+  isActive: 0
+  isConsumable: 0

@@ -210,12 +210,19 @@ public class GridManager : MonoBehaviour
             // 모든 속성 타입을 배열로
             ElementType[] allElements = (ElementType[])System.Enum.GetValues(typeof(ElementType));
 
+            // ★ 무한모드 액티브 전공 체크
+            bool includeMajor = ShouldIncludeMajorTile();
+
             // 각 속성의 확률 계산
             Dictionary<ElementType, float> probabilities = new Dictionary<ElementType, float>();
             float totalProb = 0f;
 
             foreach (ElementType elem in allElements)
             {
+                // ★ Major 타일 제외 조건
+                if (elem == ElementType.Major && !includeMajor)
+                    continue;
+
                 float prob = itemManager.GetElementSpawnProbability(elem);
                 probabilities[elem] = prob;
                 totalProb += prob;
@@ -235,6 +242,9 @@ public class GridManager : MonoBehaviour
             }
         }
 
+        // ★ 무한모드 액티브 전공 체크
+        bool canSpawnMajor = ShouldIncludeMajorTile();
+
         // 오브가 없으면 Shield/Heal 10% 고정, 나머지 균등 분배
         float rand = Random.Range(0f, 1f);
 
@@ -244,20 +254,62 @@ public class GridManager : MonoBehaviour
             return ElementType.Heal;
         else
         {
-            // 나머지 7개 중 하나 (각 11.43%)
-            ElementType[] combatElements = new ElementType[]
+            // ★ Major 포함 여부에 따라 분배
+            if (canSpawnMajor)
             {
-            ElementType.Wind,
-            ElementType.Fire,
-            ElementType.Lightning,
-            ElementType.Water,
-            ElementType.Earth,
-            ElementType.Light,
-            ElementType.Dark
-            };
+                // 나머지 8개 중 하나 (각 10%)
+                ElementType[] combatElements = new ElementType[]
+                {
+                ElementType.Wind,
+                ElementType.Fire,
+                ElementType.Lightning,
+                ElementType.Water,
+                ElementType.Earth,
+                ElementType.Light,
+                ElementType.Dark,
+                ElementType.Major
+                };
 
-            return combatElements[Random.Range(0, combatElements.Length)];
+                return combatElements[Random.Range(0, combatElements.Length)];
+            }
+            else
+            {
+                // 나머지 7개 중 하나 (각 11.43%)
+                ElementType[] combatElements = new ElementType[]
+                {
+                ElementType.Wind,
+                ElementType.Fire,
+                ElementType.Lightning,
+                ElementType.Water,
+                ElementType.Earth,
+                ElementType.Light,
+                ElementType.Dark
+                };
+
+                return combatElements[Random.Range(0, combatElements.Length)];
+            }
         }
+    }
+
+    /// <summary>
+    /// Major 타일 생성 가능 여부 체크
+    /// </summary>
+    bool ShouldIncludeMajorTile()
+    {
+        // 무한모드가 아니면 Major 타일 없음
+        GameManager gm = GameManager.Instance;
+        if (gm == null || gm.currentGameMode != GameMode.Endless)
+            return false;
+
+        // 액티브 전공이 있는지 체크
+        MajorSystem majorSystem = FindObjectOfType<MajorSystem>();
+        if (majorSystem == null)
+            return false;
+
+        MajorType activeMajor = majorSystem.GetCurrentActiveMajor();
+
+        // 액티브 전공이 None이 아니면 Major 타일 생성
+        return activeMajor != MajorType.None;
     }
 
     void CenterGrid()

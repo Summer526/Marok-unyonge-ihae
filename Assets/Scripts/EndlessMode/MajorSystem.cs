@@ -62,37 +62,40 @@ public class MajorSystem : MonoBehaviour
     }
 
     /// <summary>
-    /// 전공 선택/변경
+    /// 전공 선택 (슬롯 지정)
     /// </summary>
-    public bool SelectMajor(bool isActive, MajorType majorType, PassiveType passiveType, int slotIndex)
+    public void SelectMajor(int slotIndex, bool isActive, MajorType majorType, PassiveType passiveType)
     {
         MajorSlot targetSlot = (slotIndex == 1) ? slot1 : slot2;
 
-        // 이미 같은 전공이면 레벨업
-        if (isActive && targetSlot.isActive && targetSlot.majorType == majorType && majorType != MajorType.None)
+        // 같은 전공 선택 시 레벨업
+        if (isActive)
         {
-            return LevelUp(slotIndex);
+            if (targetSlot.isActive && targetSlot.majorType == majorType)
+            {
+                LevelUp(slotIndex);
+                return;
+            }
+        }
+        else
+        {
+            if (!targetSlot.isActive && targetSlot.passiveType == passiveType)
+            {
+                LevelUp(slotIndex);
+                return;
+            }
         }
 
-        if (!isActive && !targetSlot.isActive && targetSlot.passiveType == passiveType && passiveType != PassiveType.None)
-        {
-            return LevelUp(slotIndex);
-        }
-
-        // 새 전공 선택
+        // 다른 전공이면 교체
         targetSlot.isActive = isActive;
-        targetSlot.majorType = isActive ? majorType : MajorType.None;
-        targetSlot.passiveType = !isActive ? passiveType : PassiveType.None;
+        targetSlot.majorType = majorType;
+        targetSlot.passiveType = passiveType;
         targetSlot.level = 1;
 
-        Debug.Log($"슬롯 {slotIndex} 전공 선택: {targetSlot.GetName()} Lv.1");
+        Debug.Log($"슬롯 {slotIndex} 전공 선택 완료!");
 
-        // 비주얼 갱신
         UpdateVisuals();
-
-        return true;
     }
-
     /// <summary>
     /// 전공 레벨업 (최대 5)
     /// </summary>
@@ -598,5 +601,65 @@ public class MajorSystem : MonoBehaviour
         }
 
         return false;
+    }
+    /// <summary>
+    /// 전공 데이터 구조체 (UI 전달용)
+    /// </summary>
+    [System.Serializable]
+    public class MajorData
+    {
+        public bool isActive;           // true: 액티브, false: 페시브
+        public MajorType majorType;     // 액티브 전공 타입
+        public PassiveType passiveType; // 페시브 전공 타입
+
+        public MajorData(bool active, MajorType major, PassiveType passive)
+        {
+            isActive = active;
+            majorType = major;
+            passiveType = passive;
+        }
+    }
+
+    /// <summary>
+    /// 랜덤 전공 N개 선택 (중복 없음)
+    /// </summary>
+    public List<MajorData> GetRandomMajors(int count)
+    {
+        List<MajorData> allMajors = new List<MajorData>();
+
+        // 액티브 전공 6개
+        allMajors.Add(new MajorData(true, MajorType.Chaos, PassiveType.None));
+        allMajors.Add(new MajorData(true, MajorType.Pure, PassiveType.None));
+        allMajors.Add(new MajorData(true, MajorType.Rune, PassiveType.None));
+        allMajors.Add(new MajorData(true, MajorType.Dragon, PassiveType.None));
+        allMajors.Add(new MajorData(true, MajorType.MagiTech, PassiveType.None));
+        allMajors.Add(new MajorData(true, MajorType.Barrier, PassiveType.None));
+
+        // 페시브 전공 7개
+        allMajors.Add(new MajorData(false, MajorType.None, PassiveType.Fire_Explosion));
+        allMajors.Add(new MajorData(false, MajorType.None, PassiveType.Water_Snow));
+        allMajors.Add(new MajorData(false, MajorType.None, PassiveType.Lightning_Bolt));
+        allMajors.Add(new MajorData(false, MajorType.None, PassiveType.Wind_Gale));
+        allMajors.Add(new MajorData(false, MajorType.None, PassiveType.Earth_Crystal));
+        allMajors.Add(new MajorData(false, MajorType.None, PassiveType.Dark_Death));
+        allMajors.Add(new MajorData(false, MajorType.None, PassiveType.Light_Holy));
+
+        // 섞기
+        for (int i = 0; i < allMajors.Count; i++)
+        {
+            int randomIndex = Random.Range(i, allMajors.Count);
+            var temp = allMajors[i];
+            allMajors[i] = allMajors[randomIndex];
+            allMajors[randomIndex] = temp;
+        }
+
+        // count개만 반환
+        List<MajorData> result = new List<MajorData>();
+        for (int i = 0; i < Mathf.Min(count, allMajors.Count); i++)
+        {
+            result.Add(allMajors[i]);
+        }
+
+        return result;
     }
 }

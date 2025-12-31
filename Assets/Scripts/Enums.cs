@@ -8,7 +8,8 @@
     Light,
     Dark,
     Heal,
-    Shield
+    Shield,
+    Major
 }
 
 public enum TileState

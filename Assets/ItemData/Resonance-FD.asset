@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dc118a9e99131e24e91ed70b3936c7fe, type: 3}
   m_Name: Resonance-FD
   m_EditorClassIdentifier: 
-  icon: {fileID: 21300000, guid: d0265606c8c8b7547907ebe3dba587a2, type: 3}
+  icon: {fileID: 4976731973163330131, guid: d96f2d70efd714d4cb18e6c7ae1e816a, type: 3}
   itemType: 0
   displayName: "\uC18D\uC131 \uACF5\uBA85\uC11C(\uBD88, \uC5B4\uB460)"
   description: "\uACF5\uBA85\uC11C\uC5D0 \uC801\uD78C \uB450 \uC18D\uC131\uC774 \uACF5\uBA85\uD569\uB2C8\uB2E4.\r\n\uB450
@@ -22,6 +22,10 @@ MonoBehaviour:
   basePrice: 200
   primaryElement: 1
   secondaryElement: 6
+  isMajorBook: 0
+  isActiveMajor: 1
+  majorType: 0
+  passiveType: 0
   maxStack: 1
   isActive: 1
   isConsumable: 0
