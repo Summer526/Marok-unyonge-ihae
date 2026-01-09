@@ -698,6 +698,7 @@ public class ItemManager : MonoBehaviour
     /// Shield, Heal: 각 10% 고정
     /// 나머지 7개 속성: 80%를 분배 (오브 1개당 4% 보너스)
     /// </summary>
+
     public float GetElementSpawnProbability(ElementType element)
     {
         // Shield, Heal은 10% 고정
@@ -706,17 +707,22 @@ public class ItemManager : MonoBehaviour
             return 0.1f;
         }
 
-        // ★ Major 타일 확률
+        // ★ Major 타일 - 무한모드 + 액티브 전공 체크
         if (element == ElementType.Major)
         {
-            // 무한모드이고 액티브 전공이 있으면 일반 전투 속성과 동일한 확률
-            GridManager gridMgr = FindObjectOfType<GridManager>();
-            if (gridMgr != null)
-            {
-                // 나머지 80%를 8개로 균등 분배 (Major 포함)
-                return 0.1f; // 10%
-            }
-            return 0f;
+            GameManager gm = GameManager.Instance;
+
+            // 일반모드면 0%
+            if (gm == null || gm.currentGameMode != GameMode.Endless)
+                return 0f;
+
+            // 무한모드 - 액티브 전공 체크
+            MajorSystem majorSystem = FindObjectOfType<MajorSystem>();
+            if (majorSystem == null || majorSystem.GetCurrentActiveMajor() == MajorType.None)
+                return 0f;
+
+            // 액티브 전공 있으면 10%
+            return 0.1f;
         }
 
         // 세븐 오브 컬렉션 달성 시 균등 분배
@@ -743,7 +749,7 @@ public class ItemManager : MonoBehaviour
         {
             int orbCount = 0;
             orbStacks.TryGetValue(elem, out orbCount);
-            int priority = 1 + orbCount; // 기본 우선도 1 + 오브 개수
+            int priority = 1 + orbCount;
             totalPriority += priority;
         }
 

@@ -518,7 +518,7 @@ public class UIManager : MonoBehaviour
         gameManager.currentGameMode = GameMode.Endless;
 
         // TODO: 무한모드 시작 전 전공 선택 패널 열기
-        // ShowEndlessStartChosePanel();
+        ShowEndlessStartChosePanel();
 
         // 임시로 바로 시작
         gameManager.InitGame();
@@ -951,19 +951,11 @@ public class UIManager : MonoBehaviour
         SetAllPanelsOff();
         if (panelMainMenu) panelMainMenu.SetActive(true);
 
-        // ★ 무한모드 버튼 활성화 체크
+        // ★ 무한모드 버튼 - 아예 숨기기
         if (btnEndlessMode != null)
         {
             bool unlocked = PlayerPrefs.GetInt("EndlessModeUnlocked", 0) == 1;
-            btnEndlessMode.interactable = unlocked;
-
-            if (!unlocked)
-            {
-                // 비활성화 시 색상 어둡게
-                var colors = btnEndlessMode.colors;
-                colors.disabledColor = new Color(0.5f, 0.5f, 0.5f, 0.5f);
-                btnEndlessMode.colors = colors;
-            }
+            btnEndlessMode.gameObject.SetActive(unlocked);
         }
 
         // 메인 메뉴 BGM

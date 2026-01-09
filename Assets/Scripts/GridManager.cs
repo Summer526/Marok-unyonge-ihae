@@ -204,14 +204,15 @@ public class GridManager : MonoBehaviour
 
     ElementType GetRandomElement()
     {
+        // ★ 무한모드 체크 먼저
+        GameManager gm = GameManager.Instance;
+        bool isEndlessMode = (gm != null && gm.currentGameMode == GameMode.Endless);
+
         // ItemManager가 있고 오브를 보유중이면 새로운 확률 계산 사용
         if (itemManager != null && itemManager.hasOrb)
         {
             // 모든 속성 타입을 배열로
             ElementType[] allElements = (ElementType[])System.Enum.GetValues(typeof(ElementType));
-
-            // ★ 무한모드 액티브 전공 체크
-            bool includeMajor = ShouldIncludeMajorTile();
 
             // 각 속성의 확률 계산
             Dictionary<ElementType, float> probabilities = new Dictionary<ElementType, float>();
@@ -219,9 +220,17 @@ public class GridManager : MonoBehaviour
 
             foreach (ElementType elem in allElements)
             {
-                // ★ Major 타일 제외 조건
-                if (elem == ElementType.Major && !includeMajor)
+                // ★ 일반모드에서 Major 제외
+                if (elem == ElementType.Major && !isEndlessMode)
                     continue;
+
+                // ★ 무한모드에서도 액티브 전공 없으면 Major 제외
+                if (elem == ElementType.Major && isEndlessMode)
+                {
+                    MajorSystem majorSystem = FindObjectOfType<MajorSystem>();
+                    if (majorSystem == null || majorSystem.GetCurrentActiveMajor() == MajorType.None)
+                        continue;
+                }
 
                 float prob = itemManager.GetElementSpawnProbability(elem);
                 probabilities[elem] = prob;
@@ -242,9 +251,6 @@ public class GridManager : MonoBehaviour
             }
         }
 
-        // ★ 무한모드 액티브 전공 체크
-        bool canSpawnMajor = ShouldIncludeMajorTile();
-
         // 오브가 없으면 Shield/Heal 10% 고정, 나머지 균등 분배
         float rand = Random.Range(0f, 1f);
 
@@ -254,10 +260,24 @@ public class GridManager : MonoBehaviour
             return ElementType.Heal;
         else
         {
-            // ★ Major 포함 여부에 따라 분배
+            // ★ 일반모드: 7개만
+            // ★ 무한모드 + 액티브 전공 있음: 8개
+            // ★ 무한모드 + 액티브 전공 없음: 7개
+
+            bool canSpawnMajor = false;
+
+            if (isEndlessMode)
+            {
+                MajorSystem majorSystem = FindObjectOfType<MajorSystem>();
+                if (majorSystem != null && majorSystem.GetCurrentActiveMajor() != MajorType.None)
+                {
+                    canSpawnMajor = true;
+                }
+            }
+
             if (canSpawnMajor)
             {
-                // 나머지 8개 중 하나 (각 10%)
+                // 8개 중 하나 (각 10%)
                 ElementType[] combatElements = new ElementType[]
                 {
                 ElementType.Wind,
@@ -274,7 +294,7 @@ public class GridManager : MonoBehaviour
             }
             else
             {
-                // 나머지 7개 중 하나 (각 11.43%)
+                // 7개 중 하나 (각 11.43%)
                 ElementType[] combatElements = new ElementType[]
                 {
                 ElementType.Wind,
@@ -289,27 +309,6 @@ public class GridManager : MonoBehaviour
                 return combatElements[Random.Range(0, combatElements.Length)];
             }
         }
-    }
-
-    /// <summary>
-    /// Major 타일 생성 가능 여부 체크
-    /// </summary>
-    bool ShouldIncludeMajorTile()
-    {
-        // 무한모드가 아니면 Major 타일 없음
-        GameManager gm = GameManager.Instance;
-        if (gm == null || gm.currentGameMode != GameMode.Endless)
-            return false;
-
-        // 액티브 전공이 있는지 체크
-        MajorSystem majorSystem = FindObjectOfType<MajorSystem>();
-        if (majorSystem == null)
-            return false;
-
-        MajorType activeMajor = majorSystem.GetCurrentActiveMajor();
-
-        // 액티브 전공이 None이 아니면 Major 타일 생성
-        return activeMajor != MajorType.None;
     }
 
     void CenterGrid()

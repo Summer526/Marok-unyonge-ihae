@@ -477,6 +477,7 @@ public class GameManager : MonoBehaviour
 
         if (actionType == PlayerActionType.Attack)
         {
+            PlayAttackEffect();
             if (!instantKill)
             {
                 currentEnemy.TakeDamage(damage);
@@ -651,46 +652,6 @@ public class GameManager : MonoBehaviour
     public void OnHealButton()
     {
         PlayerHeal();
-    }
-
-    IEnumerator DelayedEndPlayerTurn(PlayerActionType actionType, float damage, float heal)
-    {
-        yield return new WaitForSeconds(actionDelay);
-
-        if (actionType == PlayerActionType.Attack)
-        {
-            PlayAttackEffect();
-
-            currentEnemy.TakeDamage(damage);
-            Debug.Log($"몹에게 {damage} 데미지!");
-            UpdateAllUI();
-
-            if (currentEnemy.IsDead())
-            {
-                yield return new WaitForSeconds(0.5f);
-                OnEnemyKilled();
-                yield break;
-            }
-        }
-        else if (actionType == PlayerActionType.Heal)
-        {
-            player.Heal(heal);
-            Debug.Log($"플레이어 {heal} 회복!");
-            UpdateAllUI();
-
-            if (AudioManager.Instance != null)
-                AudioManager.Instance.PlaySE("Heal");
-        }
-        else if (actionType == PlayerActionType.Shield)
-        {
-            Debug.Log($"플레이어 쉴드 턴 종료 (현재 쉴드: {player.shield:F1})");
-            UpdateAllUI();
-
-            if (AudioManager.Instance != null)
-                AudioManager.Instance.PlaySE("MakeShield");
-        }
-
-        StartCoroutine(DelayedEnemyTurn());
     }
 
     IEnumerator DelayedEnemyTurn()
