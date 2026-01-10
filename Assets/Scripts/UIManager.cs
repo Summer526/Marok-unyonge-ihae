@@ -145,7 +145,8 @@ public class UIManager : MonoBehaviour
         ElementType.Light,
         ElementType.Dark,
         ElementType.Heal,
-        ElementType.Shield
+        ElementType.Shield,
+        ElementType.Major
     };
 
     private int currentElementIndex = 0;
@@ -1252,8 +1253,8 @@ public class UIManager : MonoBehaviour
 
             GameObject slotObj = Instantiate(inventoryItemSlotPrefab, inventoryItemContainer);
 
-            Image imgIcon = slotObj.transform.Find("Canvas/Itme/IconImage")?.GetComponent<Image>();
-            TMP_Text txtCount = slotObj.transform.Find("Canvas/Itme/Text (TMP)")?.GetComponent<TMP_Text>();
+            Image imgIcon = slotObj.transform.Find("Canvas/InventoryItme/IconImage")?.GetComponent<Image>();
+            TMP_Text txtCount = slotObj.transform.Find("CCanvas/InventoryItme/Image/Text (TMP)")?.GetComponent<TMP_Text>();
             Button btnSlot = slotObj.GetComponent<Button>();
 
             if (imgIcon != null)
@@ -1413,9 +1414,13 @@ public class UIManager : MonoBehaviour
         if (selectableElements == null || selectableElements.Length == 0)
             return;
 
-        currentElementIndex--;
-        if (currentElementIndex < 0)
-            currentElementIndex = selectableElements.Length - 1;
+        do
+        {
+            currentElementIndex--;
+            if (currentElementIndex < 0)
+                currentElementIndex = selectableElements.Length - 1;
+        }
+        while (ShouldSkipElement(CurrentElement));
 
         UpdateElementDisplay();
     }
@@ -1425,11 +1430,33 @@ public class UIManager : MonoBehaviour
         if (selectableElements == null || selectableElements.Length == 0)
             return;
 
-        currentElementIndex++;
-        if (currentElementIndex >= selectableElements.Length)
-            currentElementIndex = 0;
+        do
+        {
+            currentElementIndex++;
+            if (currentElementIndex >= selectableElements.Length)
+                currentElementIndex = 0;
+        }
+        while (ShouldSkipElement(CurrentElement));
 
         UpdateElementDisplay();
+    }
+
+    // ★ 현재 모드에서 이 속성을 스킵해야 하는지 체크
+    bool ShouldSkipElement(ElementType element)
+    {
+        if (element == ElementType.Major)
+        {
+            // 일반모드면 무조건 스킵
+            if (gameManager == null || gameManager.currentGameMode != GameMode.Endless)
+                return true;
+
+            // 무한모드여도 액티브 전공 없으면 스킵
+            MajorSystem majorSystem = FindObjectOfType<MajorSystem>();
+            if (majorSystem == null || majorSystem.GetCurrentActiveMajor() == MajorType.None)
+                return true;
+        }
+
+        return false;
     }
 
     void UpdateElementDisplay()

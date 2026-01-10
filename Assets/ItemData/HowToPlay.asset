@@ -20,4 +20,10 @@ MonoBehaviour:
   basePrice: 0
   primaryElement: 0
   secondaryElement: 0
+  isMajorBook: 0
+  isActiveMajor: 1
+  majorType: 0
+  passiveType: 0
   maxStack: 1
+  isActive: 1
+  isConsumable: 0

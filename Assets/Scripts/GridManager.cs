@@ -204,97 +204,54 @@ public class GridManager : MonoBehaviour
 
     ElementType GetRandomElement()
     {
-        // ★ 무한모드 체크 먼저
+        // ★ 무한모드 체크
         GameManager gm = GameManager.Instance;
         bool isEndlessMode = (gm != null && gm.currentGameMode == GameMode.Endless);
 
-        // ItemManager가 있고 오브를 보유중이면 새로운 확률 계산 사용
-        if (itemManager != null && itemManager.hasOrb)
+        // ★ 일반모드면 Major 완전 제외
+        if (!isEndlessMode)
         {
-            // 모든 속성 타입을 배열로
-            ElementType[] allElements = (ElementType[])System.Enum.GetValues(typeof(ElementType));
-
-            // 각 속성의 확률 계산
-            Dictionary<ElementType, float> probabilities = new Dictionary<ElementType, float>();
-            float totalProb = 0f;
-
-            foreach (ElementType elem in allElements)
+            // ItemManager가 있고 오브를 보유중이면 확률 계산
+            if (itemManager != null && itemManager.hasOrb)
             {
-                // ★ 일반모드에서 Major 제외
-                if (elem == ElementType.Major && !isEndlessMode)
-                    continue;
+                ElementType[] allElements = (ElementType[])System.Enum.GetValues(typeof(ElementType));
+                Dictionary<ElementType, float> probabilities = new Dictionary<ElementType, float>();
+                float totalProb = 0f;
 
-                // ★ 무한모드에서도 액티브 전공 없으면 Major 제외
-                if (elem == ElementType.Major && isEndlessMode)
+                foreach (ElementType elem in allElements)
                 {
-                    MajorSystem majorSystem = FindObjectOfType<MajorSystem>();
-                    if (majorSystem == null || majorSystem.GetCurrentActiveMajor() == MajorType.None)
+                    // ★ Major 제외
+                    if (elem == ElementType.Major)
                         continue;
+
+                    float prob = itemManager.GetElementSpawnProbability(elem);
+                    probabilities[elem] = prob;
+                    totalProb += prob;
                 }
 
-                float prob = itemManager.GetElementSpawnProbability(elem);
-                probabilities[elem] = prob;
-                totalProb += prob;
-            }
+                float random = Random.Range(0f, totalProb);
+                float cumulative = 0f;
 
-            // 가중치 랜덤 선택
-            float random = Random.Range(0f, totalProb);
-            float cumulative = 0f;
-
-            foreach (var kvp in probabilities)
-            {
-                cumulative += kvp.Value;
-                if (random <= cumulative)
+                foreach (var kvp in probabilities)
                 {
-                    return kvp.Key;
-                }
-            }
-        }
-
-        // 오브가 없으면 Shield/Heal 10% 고정, 나머지 균등 분배
-        float rand = Random.Range(0f, 1f);
-
-        if (rand < 0.1f)
-            return ElementType.Shield;
-        else if (rand < 0.2f)
-            return ElementType.Heal;
-        else
-        {
-            // ★ 일반모드: 7개만
-            // ★ 무한모드 + 액티브 전공 있음: 8개
-            // ★ 무한모드 + 액티브 전공 없음: 7개
-
-            bool canSpawnMajor = false;
-
-            if (isEndlessMode)
-            {
-                MajorSystem majorSystem = FindObjectOfType<MajorSystem>();
-                if (majorSystem != null && majorSystem.GetCurrentActiveMajor() != MajorType.None)
-                {
-                    canSpawnMajor = true;
+                    cumulative += kvp.Value;
+                    if (random <= cumulative)
+                    {
+                        return kvp.Key;
+                    }
                 }
             }
 
-            if (canSpawnMajor)
-            {
-                // 8개 중 하나 (각 10%)
-                ElementType[] combatElements = new ElementType[]
-                {
-                ElementType.Wind,
-                ElementType.Fire,
-                ElementType.Lightning,
-                ElementType.Water,
-                ElementType.Earth,
-                ElementType.Light,
-                ElementType.Dark,
-                ElementType.Major
-                };
+            // 오브 없을 때 - Shield/Heal 10%, 나머지 7개 균등
+            float rand = Random.Range(0f, 1f);
 
-                return combatElements[Random.Range(0, combatElements.Length)];
-            }
+            if (rand < 0.1f)
+                return ElementType.Shield;
+            else if (rand < 0.2f)
+                return ElementType.Heal;
             else
             {
-                // 7개 중 하나 (각 11.43%)
+                // ★ 일반모드는 7개만
                 ElementType[] combatElements = new ElementType[]
                 {
                 ElementType.Wind,
@@ -307,6 +264,81 @@ public class GridManager : MonoBehaviour
                 };
 
                 return combatElements[Random.Range(0, combatElements.Length)];
+            }
+        }
+        else
+        {
+            // ★ 무한모드 - Major 포함 가능
+            MajorSystem majorSystem = FindObjectOfType<MajorSystem>();
+            bool canSpawnMajor = (majorSystem != null && majorSystem.GetCurrentActiveMajor() != MajorType.None);
+
+            if (itemManager != null && itemManager.hasOrb)
+            {
+                ElementType[] allElements = (ElementType[])System.Enum.GetValues(typeof(ElementType));
+                Dictionary<ElementType, float> probabilities = new Dictionary<ElementType, float>();
+                float totalProb = 0f;
+
+                foreach (ElementType elem in allElements)
+                {
+                    // ★ Major는 액티브 전공 있을 때만
+                    if (elem == ElementType.Major && !canSpawnMajor)
+                        continue;
+
+                    float prob = itemManager.GetElementSpawnProbability(elem);
+                    probabilities[elem] = prob;
+                    totalProb += prob;
+                }
+
+                float random = Random.Range(0f, totalProb);
+                float cumulative = 0f;
+
+                foreach (var kvp in probabilities)
+                {
+                    cumulative += kvp.Value;
+                    if (random <= cumulative)
+                    {
+                        return kvp.Key;
+                    }
+                }
+            }
+
+            float rand = Random.Range(0f, 1f);
+
+            if (rand < 0.1f)
+                return ElementType.Shield;
+            else if (rand < 0.2f)
+                return ElementType.Heal;
+            else
+            {
+                if (canSpawnMajor)
+                {
+                    ElementType[] combatElements = new ElementType[]
+                    {
+                    ElementType.Wind,
+                    ElementType.Fire,
+                    ElementType.Lightning,
+                    ElementType.Water,
+                    ElementType.Earth,
+                    ElementType.Light,
+                    ElementType.Dark,
+                    ElementType.Major
+                    };
+                    return combatElements[Random.Range(0, combatElements.Length)];
+                }
+                else
+                {
+                    ElementType[] combatElements = new ElementType[]
+                    {
+                    ElementType.Wind,
+                    ElementType.Fire,
+                    ElementType.Lightning,
+                    ElementType.Water,
+                    ElementType.Earth,
+                    ElementType.Light,
+                    ElementType.Dark
+                    };
+                    return combatElements[Random.Range(0, combatElements.Length)];
+                }
             }
         }
     }

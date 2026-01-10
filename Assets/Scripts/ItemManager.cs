@@ -707,16 +707,16 @@ public class ItemManager : MonoBehaviour
             return 0.1f;
         }
 
-        // ★ Major 타일 - 무한모드 + 액티브 전공 체크
+        // ★ Major 타일 체크
         if (element == ElementType.Major)
         {
             GameManager gm = GameManager.Instance;
 
-            // 일반모드면 0%
+            // ★ 일반모드면 무조건 0%
             if (gm == null || gm.currentGameMode != GameMode.Endless)
                 return 0f;
 
-            // 무한모드 - 액티브 전공 체크
+            // ★ 무한모드 - 액티브 전공 체크
             MajorSystem majorSystem = FindObjectOfType<MajorSystem>();
             if (majorSystem == null || majorSystem.GetCurrentActiveMajor() == MajorType.None)
                 return 0f;
@@ -728,7 +728,7 @@ public class ItemManager : MonoBehaviour
         // 세븐 오브 컬렉션 달성 시 균등 분배
         if (HasAllSevenOrbs())
         {
-            return 0.8f / 7f; // 11.43%씩
+            return 0.8f / 7f;
         }
 
         // 나머지 7개 속성의 우선도 계산
@@ -743,7 +743,6 @@ public class ItemManager : MonoBehaviour
         ElementType.Dark
         };
 
-        // 총 우선도 합계 계산
         int totalPriority = 0;
         foreach (var elem in combatElements)
         {
@@ -753,12 +752,10 @@ public class ItemManager : MonoBehaviour
             totalPriority += priority;
         }
 
-        // 해당 속성의 우선도 계산
         int myOrbCount = 0;
         orbStacks.TryGetValue(element, out myOrbCount);
         int myPriority = 1 + myOrbCount;
 
-        // 80%를 우선도 비율로 분배
         float probability = 0.8f * ((float)myPriority / (float)totalPriority);
 
         return probability;
