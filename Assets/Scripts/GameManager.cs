@@ -180,12 +180,14 @@ public class GameManager : MonoBehaviour
     }
     void SetupPlayer()
     {
-        if (player != null)
+        // ★ 기존 플레이어 찾기 및 삭제
+        PlayerStats existingPlayer = FindObjectOfType<PlayerStats>();
+        if (existingPlayer != null)
         {
-            Destroy(player.gameObject);
-            player = null;
+            Destroy(existingPlayer.gameObject);
             Debug.Log("기존 플레이어 삭제");
         }
+        player = null;
 
         // ★ 플레이어 새로 생성
         if (playerPrefab != null && playerSpawnPoint != null)
@@ -207,6 +209,7 @@ public class GameManager : MonoBehaviour
             player.hasLastStandUsed = false;
             player.lastStandTriggeredThisHit = false;
             player.shield = 0f;
+            player.waterSnowBonus = 0f;
             player.UpdateStatsForStage(stage);
         }
     }
@@ -767,6 +770,11 @@ public class GameManager : MonoBehaviour
 
     public void StartEnemyTurn()
     {
+        StartCoroutine(EnemyTurnCoroutine());
+    }
+
+    IEnumerator EnemyTurnCoroutine()
+    {
         isPlayerTurn = false;
         Debug.Log("몹 턴 시작");
 
@@ -782,6 +790,10 @@ public class GameManager : MonoBehaviour
 
         bool hasLastStandItem = (itemManager != null && itemManager.hasLastStand);
         currentEnemy.AttackPlayer(player, hasLastStandItem);
+
+        // ★ 몹 공격 애니메이션/사운드 재생 시간 대기 (1초)
+        yield return new WaitForSeconds(1.0f);
+
         UpdateAllUI();
 
         // 라스트 스탠드 발동했으면 콤보 끊기
@@ -798,7 +810,7 @@ public class GameManager : MonoBehaviour
         if (player.IsDead())
         {
             GameOver();
-            return;
+            yield break;
         }
 
         StartPlayerTurn();

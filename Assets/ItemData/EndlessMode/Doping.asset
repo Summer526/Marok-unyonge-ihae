@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dc118a9e99131e24e91ed70b3936c7fe, type: 3}
   m_Name: Doping
   m_EditorClassIdentifier: 
-  icon: {fileID: 7557513843721482368, guid: 67f6e7faf8ac6f740ad8d47f07eeb26c, type: 3}
+  icon: {fileID: 21300000, guid: 67f6e7faf8ac6f740ad8d47f07eeb26c, type: 3}
   itemType: 18
   displayName: "\uB3C4\uD551\uC57D"
   description: "\uCD5C\uB300 \uCCB4\uB825\uC774 \uC99D\uAC00\uD55C\uB2E4.\n\uC2DC\uAC04\uC774

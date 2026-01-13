@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dc118a9e99131e24e91ed70b3936c7fe, type: 3}
   m_Name: BlackContract
   m_EditorClassIdentifier: 
-  icon: {fileID: 4898420060044394879, guid: dc2c69dd8fe92f1468bcac3343d743df, type: 3}
+  icon: {fileID: 21300000, guid: dc2c69dd8fe92f1468bcac3343d743df, type: 3}
   itemType: 20
   displayName: "\uAC80\uC740 \uACC4\uC57D\uC11C"
   description: "1\uAC1C\uC758 \uCE35\uC744 \uC9C0\uB0A0\uB54C\uB9C8\uB2E4 \uACF5\uACA9\uB825\uC774

@@ -6802,18 +6802,18 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 72745117}
-  - {fileID: 1838610029}
   - {fileID: 1672707196}
   - {fileID: 631183667}
-  - {fileID: 1424995263}
   - {fileID: 1047288675}
   - {fileID: 541445581}
+  - {fileID: 1424995263}
   - {fileID: 834436279}
   - {fileID: 1398238743}
   - {fileID: 119981618}
   - {fileID: 1997716048}
   - {fileID: 351941674}
   - {fileID: 304641079}
+  - {fileID: 1838610029}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -16778,7 +16778,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: -50, y: 0}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!114 &1224511527
 MonoBehaviour:
@@ -16801,7 +16801,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1224511525}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a8695521f0d02e499659fee002a26c2, type: 3}
   m_Name: 
@@ -22407,8 +22407,8 @@ MonoBehaviour:
   selectableElements: 000000000100000002000000030000000400000005000000060000000700000008000000
   sliderBGM: {fileID: 445771156}
   sliderSE: {fileID: 181977809}
-  btnSettingsQuit: {fileID: 709506849}
-  btnSettingsClose: {fileID: 670869474}
+  btnSettingsQuit: {fileID: 670869474}
+  btnSettingsClose: {fileID: 709506849}
   panelEndlessStory: {fileID: 1398238742}
   panelEndlessStartChose: {fileID: 119981617}
   panelEndlessChose: {fileID: 1997716047}

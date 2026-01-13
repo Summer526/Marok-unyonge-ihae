@@ -173,6 +173,12 @@ public class PlayerStats : MonoBehaviour
     }
     IEnumerator HitEffect()
     {
+        // spriteRenderers가 없으면 자동으로 찾기
+        if (spriteRenderers.Count == 0)
+        {
+            spriteRenderers.AddRange(GetComponentsInChildren<SpriteRenderer>());
+        }
+
         if (spriteRenderers.Count == 0) yield break;
 
         Color hitColor = new Color(1f, 0.3f, 0.3f, 1f);  // 빨간색
@@ -203,7 +209,17 @@ public class PlayerStats : MonoBehaviour
     // ★ 회피 이펙트 - 투명도 낮추기
     IEnumerator EvadeEffect()
     {
-        if (spriteRenderers.Count == 0) yield break;
+        // spriteRenderers가 없으면 자동으로 찾기
+        if (spriteRenderers.Count == 0)
+        {
+            spriteRenderers.AddRange(GetComponentsInChildren<SpriteRenderer>());
+        }
+
+        if (spriteRenderers.Count == 0)
+        {
+            Debug.LogWarning("회피 이펙트: SpriteRenderer를 찾을 수 없음");
+            yield break;
+        }
 
         List<Color> originalColors = new List<Color>();
 

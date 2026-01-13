@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dc118a9e99131e24e91ed70b3936c7fe, type: 3}
   m_Name: Tent
   m_EditorClassIdentifier: 
-  icon: {fileID: -3007020020174481889, guid: dc3336a27a73acf4cab8049b14bb2c0a, type: 3}
+  icon: {fileID: 21300000, guid: dc3336a27a73acf4cab8049b14bb2c0a, type: 3}
   itemType: 23
   displayName: "\uD734\uB300\uC6A9 \uBAA8\uB2E5\uBD88"
   description: "\uD604\uC7AC \uCE35\uC744 \uC804\uD22C \uC5C6\uC774 \uC9C0\uB098\uAC04\uB2E4.\n\uCCB4\uB825\uC744

@@ -78,27 +78,27 @@ public class EnemyStats : MonoBehaviour
         {
             // 1~30 구간
             maxHP = BaseHP * Mathf.Pow(1.07f, stage - 1);
-            atk = BaseAtk * Mathf.Pow(1.04f, stage - 1);
+            atk = BaseAtk * Mathf.Pow(1.05f, stage - 1);
         }
         else if (stage <= 60)
         {
             // 31~60 구간
             float hp30 = BaseHP * Mathf.Pow(1.07f, 29);
-            float atk30 =BaseAtk * Mathf.Pow(1.04f, 29);
+            float atk30 =BaseAtk * Mathf.Pow(1.05f, 29);
 
             maxHP = hp30 * Mathf.Pow(1.08f, stage - 30);
-            atk = atk30 * Mathf.Pow(1.05f, stage - 30);
+            atk = atk30 * Mathf.Pow(1.07f, stage - 30);
         }
         else
         {
             // 61~100 구간
             float hp30 = BaseHP * Mathf.Pow(1.07f, 29);
-            float atk30 = BaseAtk * Mathf.Pow(1.04f, 29);
+            float atk30 = BaseAtk * Mathf.Pow(1.05f, 29);
             float hp60 = hp30 * Mathf.Pow(1.08f, 30);
-            float atk60 = atk30 * Mathf.Pow(1.05f, 30);
+            float atk60 = atk30 * Mathf.Pow(1.06f, 30);
 
             maxHP = hp60 * Mathf.Pow(1.09f, stage - 60);
-            atk = atk60 * Mathf.Pow(1.06f, stage - 60);
+            atk = atk60 * Mathf.Pow(1.07f, stage - 60);
         }
 
         currentHP = maxHP;
@@ -114,17 +114,8 @@ public class EnemyStats : MonoBehaviour
             // ★ Die 애니메이션
             if (animator != null)
                 animator.SetTrigger(ANIM_DIE);
+        }
 
-            // 몹 사망 SE
-            if (AudioManager.Instance != null)
-                AudioManager.Instance.PlaySE("MobDie");
-        }
-        else
-        {
-            // 몹 피격 SE
-            if (AudioManager.Instance != null)
-                AudioManager.Instance.PlaySE("MobAttacked");
-        }
         WorldUnitHUD hud = GetComponentInChildren<WorldUnitHUD>();
         if (hud != null)
         {

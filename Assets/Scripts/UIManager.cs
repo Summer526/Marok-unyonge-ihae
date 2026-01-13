@@ -213,6 +213,8 @@ public class UIManager : MonoBehaviour
     public Button btnEndlessHowToPlayClose;
     private int currentEndlessHowToPlayPage = 0;
 
+    private bool isConfirmButtonLocked = false;
+
     private void Awake()
     {
         if (Instance == null)
@@ -1226,7 +1228,13 @@ public class UIManager : MonoBehaviour
     public void UpdateInventoryUI()
     {
         ItemManager itemMgr = FindObjectOfType<ItemManager>();
-        if (itemMgr == null) return;
+        if (itemMgr == null)
+        {
+            Debug.LogError("ItemManager를 찾을 수 없음!");
+            return;
+        }
+
+        Debug.Log($"=== UpdateInventoryUI 시작 ===");
 
         foreach (Transform child in inventoryItemContainer)
         {
@@ -1234,61 +1242,60 @@ public class UIManager : MonoBehaviour
         }
 
         List<ItemData> items = itemMgr.ownedItems;
+        Debug.Log($"보유 아이템 총 개수: {items.Count}");
+
         Dictionary<ItemType, List<ItemData>> groupedItems = new Dictionary<ItemType, List<ItemData>>();
 
         foreach (var item in items)
         {
-            if (item == null) continue;
+            if (item == null)
+            {
+                Debug.LogWarning("null 아이템 발견!");
+                continue;
+            }
+
             if (!groupedItems.ContainsKey(item.itemType))
             {
                 groupedItems[item.itemType] = new List<ItemData>();
             }
             groupedItems[item.itemType].Add(item);
+
+            Debug.Log($"아이템 추가: {item.displayName} (타입: {item.itemType})");
         }
+
+        Debug.Log($"그룹화된 아이템 종류: {groupedItems.Count}");
 
         foreach (var kvp in groupedItems)
         {
             ItemData firstItem = kvp.Value[0];
             int count = kvp.Value.Count;
 
+            Debug.Log($"슬롯 생성 시도: {firstItem.displayName} x{count}");
+
             GameObject slotObj = Instantiate(inventoryItemSlotPrefab, inventoryItemContainer);
 
-            Image imgIcon = slotObj.transform.Find("Canvas/InventoryItme/IconImage")?.GetComponent<Image>();
-            TMP_Text txtCount = slotObj.transform.Find("CCanvas/InventoryItme/Image/Text (TMP)")?.GetComponent<TMP_Text>();
-            Button btnSlot = slotObj.GetComponent<Button>();
-
-            if (imgIcon != null)
+            if (slotObj == null)
             {
-                if (firstItem.icon != null)
-                {
-                    imgIcon.sprite = firstItem.icon;
-                    imgIcon.enabled = true;
-                }
-                else
-                {
-                    imgIcon.enabled = false;
-                }
+                Debug.LogError("슬롯 Instantiate 실패!");
+                continue;
             }
 
-            if (txtCount != null)
-            {
-                if (count > 1)
-                {
-                    txtCount.text = $"x{count}";
-                    txtCount.gameObject.SetActive(true);
-                }
-                else
-                {
-                    txtCount.gameObject.SetActive(false);
-                }
-            }
+            Debug.Log($"슬롯 생성됨: {slotObj.name}");
 
-            if (btnSlot != null)
+            InventorySlotUI slotUI = slotObj.GetComponent<InventorySlotUI>();
+
+            if (slotUI != null)
             {
-                ItemData itemToShow = firstItem;
-                btnSlot.onClick.AddListener(() => SelectInventoryItem(itemToShow));  // ★ 이것만
+                slotUI.Setup(firstItem, count, SelectInventoryItem);
+                Debug.Log($"슬롯 Setup 완료: {firstItem.displayName}");
+            }
+            else
+            {
+                Debug.LogError("InventorySlotUI 컴포넌트를 찾을 수 없음!");
             }
         }
+
+        Debug.Log($"=== UpdateInventoryUI 완료 ===");
 
         ClearInventoryItemInfo();
     }
@@ -1515,9 +1522,18 @@ public class UIManager : MonoBehaviour
 
     public void OnClickConfirm()
     {
-        AudioManager.Instance.PlaySE("Attack");
         if (gameManager == null) return;
         if (!gameManager.isPlayerTurn) return;
+        if (btnConfirm != null && !btnConfirm.interactable) return; // ★ 이미 비활성화면 무시
+
+        AudioManager.Instance.PlaySE("Attack");
+
+        // ★ 버튼 비활성화
+        if (btnConfirm != null)
+        {
+            btnConfirm.interactable = false;
+            StartCoroutine(LockConfirmButton());
+        }
 
         ElementType elem = CurrentElement;
 
@@ -1534,7 +1550,12 @@ public class UIManager : MonoBehaviour
             gameManager.PlayerAttack(elem);
         }
     }
-
+    IEnumerator LockConfirmButton()
+    {
+        isConfirmButtonLocked = true;
+        yield return new WaitForSeconds(0.5f);
+        isConfirmButtonLocked = false;
+    }
     public void OnClickCloseShop()
     {
         PlayButtonSE();

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dc118a9e99131e24e91ed70b3936c7fe, type: 3}
   m_Name: Pin
   m_EditorClassIdentifier: 
-  icon: {fileID: -3615507899251508044, guid: b81ad79d97e90f84e89bd4d8bbcef6a1, type: 3}
+  icon: {fileID: 21300000, guid: b81ad79d97e90f84e89bd4d8bbcef6a1, type: 3}
   itemType: 16
   displayName: "\uB9C8\uB825 \uC790\uBB3C\uC1E0"
   description: "\uC784\uC758\uC758 \uCE78\uC758 \uC18D\uC131\uC774 \uBC14\uB00C\uC9C0

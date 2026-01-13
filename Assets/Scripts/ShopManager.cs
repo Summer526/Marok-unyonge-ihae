@@ -65,9 +65,12 @@ public class ShopManager : MonoBehaviour
 
     void GenerateShopItems()
     {
-        // 구매 가능한 아이템 필터링 (maxStack 체크)
+        // ★ 게임 모드 확인
+        bool isEndlessMode = (gameManager != null && gameManager.currentGameMode == GameMode.Endless);
+
+        // 구매 가능한 아이템 필터링 (maxStack 체크 + 모드별 필터)
         List<ItemData> availableItems = allItems
-            .Where(item => itemManager.CanBuyMore(item))
+            .Where(item => itemManager.CanBuyMore(item) && IsItemAvailableInCurrentMode(item, isEndlessMode))
             .ToList();
 
         if (availableItems.Count == 0)
@@ -87,7 +90,7 @@ public class ShopManager : MonoBehaviour
             if (selected != null)
             {
                 currentShopItems.Add(selected);
-                availableItems.Remove(selected); // 같은 상점에 중복 방지
+                availableItems.Remove(selected);
             }
         }
 
@@ -99,6 +102,39 @@ public class ShopManager : MonoBehaviour
             Debug.Log($"{i + 1}. {item.displayName} - {price}G");
             Debug.Log($"   {item.description}");
         }
+    }
+
+    /// <summary>
+    /// 현재 모드에서 이 아이템을 판매할 수 있는지 체크
+    /// </summary>
+    bool IsItemAvailableInCurrentMode(ItemData item, bool isEndlessMode)
+    {
+        if (item == null) return false;
+
+        // 무한모드 전용 아이템 목록
+        ItemType[] endlessOnlyItems = new ItemType[]
+        {
+        ItemType.Vampire,
+        ItemType.Doping,
+        ItemType.DoubleBlade,
+        ItemType.BlackContract,
+        ItemType.LizardTail,
+        ItemType.ResidueMana,
+        ItemType.Tent,
+        ItemType.DeadCoin,
+        ItemType.MajorBook
+        };
+
+        // 무한모드 전용 아이템인지 확인
+        bool isEndlessOnly = System.Array.Exists(endlessOnlyItems, t => t == item.itemType);
+
+        // 일반모드에서 무한모드 전용 아이템 제외
+        if (!isEndlessMode && isEndlessOnly)
+        {
+            return false;
+        }
+
+        return true;
     }
 
     ItemData SelectWeightedRandom(List<ItemData> items)

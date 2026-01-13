@@ -163,6 +163,7 @@ GameObject:
   - component: {fileID: 1932118642275995114}
   - component: {fileID: 2903673178482789526}
   - component: {fileID: 224644861486612187}
+  - component: {fileID: 8797405468193601466}
   m_Layer: 5
   m_Name: InventoryItme
   m_TagString: Untagged
@@ -273,6 +274,21 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &8797405468193601466
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7349990711586394625}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0edf6e901aad3fa429d055c764c7e955, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::InventorySlotUI
+  iconImage: {fileID: 8749420681108186855}
+  countText: {fileID: 6905791237393998071}
+  button: {fileID: 224644861486612187}
 --- !u!1 &7622709974154214557
 GameObject:
   m_ObjectHideFlags: 0

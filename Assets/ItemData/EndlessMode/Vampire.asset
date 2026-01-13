@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dc118a9e99131e24e91ed70b3936c7fe, type: 3}
   m_Name: Vampire
   m_EditorClassIdentifier: 
-  icon: {fileID: -6355843629968944090, guid: 14fe19b55d4368846a6a97df3c8c6d89, type: 3}
+  icon: {fileID: 21300000, guid: 14fe19b55d4368846a6a97df3c8c6d89, type: 3}
   itemType: 17
   displayName: "\uD761\uD608\uB098\uBE44"
   description: "\uACF5\uACA9\uC73C\uB85C \uC785\uD78C \uD53C\uD574\uC758 5%\uB97C
